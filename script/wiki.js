@@ -42,7 +42,7 @@ $(document).ready(function() {
 
 function loadArticle(title, previousMetadata) {
     $.getJSON(
-        "http://en.wikipedia.org/w/api.php?callback=?", {
+        "https://en.wikipedia.org/w/api.php?callback=?", {
             titles: title,
             action: "query",
             prop: "revisions",
