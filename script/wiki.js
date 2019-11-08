@@ -6,6 +6,7 @@ $(document).ready(function() {
     $('#topic').submit(function() {
         var names = $('#test').val().split(',');
         for (i = 0; i < names.length; i++) {
+          loadArticle(names[i]);
           process(names[i], maxLink).then(function(val) {
             var nameList = val;
             for (var j = 0; j < nameList.length; j++) {
