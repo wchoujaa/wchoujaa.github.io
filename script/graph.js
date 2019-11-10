@@ -25,7 +25,7 @@ function init() {
         injectInto: 'infovis',
         levelDistance: 28,
         transition: $jit.Trans.Quart.easeInOut,
-          iter:30,
+          iter:200,
         Navigation: {
             enable: true,
             panning: true,

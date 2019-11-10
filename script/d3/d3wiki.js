@@ -1,7 +1,7 @@
 var rgraphic;
 var maxLink = 5;
 $(document).ready(function() {
-    rgraphic = init();
+    rgraphic = d3Init();
 
     $('#topic').submit(function() {
         var names = $('#test').val().split(',');
@@ -27,21 +27,11 @@ $(document).ready(function() {
     $('#infovis').css('width', screen.width).css('height', screen.height);
     $('#infovis').css('top', ((($(window).height() - screen.height) / 2)));
 
-    rgraphic.loadJSON(root);
-    rgraphic.canvas.resize(screen.width, screen.height);
-    rgraphic.compute('end');
-    rgraphic.graph.eachNode(function(n) {
-        var pos = n.getPos();
-        pos.setc(-200, -200);
-    });
 
-    rgraphic.fx.animate({
-        modes: ['polar'],
-        duration: 2500
-    });
 });
 
 function displayNode(text, metadata) {
+    
     var graph = rgraphic.graph;
     var atExistingNode = (graph.getNode(metadata.id) != null);
 
