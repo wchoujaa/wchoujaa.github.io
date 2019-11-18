@@ -1,24 +1,24 @@
 var rgraphic;
 var maxLink = 5;
-$(document).ready(function() {
+$(document).ready(function () {
     rgraphic = d3Init();
 
-    $('#topic').submit(function() {
+    $('#topic').submit(function () {
         var names = $('#test').val().split(',');
         for (i = 0; i < names.length; i++) {
-          loadArticle(names[i]);
-          process(names[i], maxLink).then(function(val) {
-            var nameList = val;
-            for (var j = 0; j < nameList.length; j++) {
-              loadArticle(nameList[j].normal);
-            }
-          });
+            loadArticle(names[i]);
+            process(names[i], maxLink).then(function (val) {
+                var nameList = val;
+                for (var j = 0; j < nameList.length; j++) {
+                    loadArticle(nameList[j].normal);
+                }
+            });
         }
         return false;
     });
 
 
-    $(window).resize(function() {
+    $(window).resize(function () {
         $('#opening').css('width', $(window).width()).css('height', $(window).height() - 195);
         $('#infovis').css('left', (($(window).width() - screen.width) / 2));
     });
@@ -31,31 +31,45 @@ $(document).ready(function() {
 });
 
 function displayNode(text, metadata) {
+
+    var filter = "Philosophie";
+
+    var node = (d3root) ? d3.select(d3root).filter(function(d){return d.name == filter;}) : null
+
+    console.log(node);
     
-    var graph = rgraphic.graph;
-    var atExistingNode = (graph.getNode(metadata.id) != null);
+
+    // is Node alreay existing
+
+    var atExistingNode = false;
 
     addToScroll(3000, metadata.name + (atExistingNode ? " (&middot;)" : ""));
 
-    if (!atExistingNode) {
-        graph.addNode(metadata);
-        graph.addAdjacence(graph.getNode(metadata.id), graph.getNode(root.id));
-    }
+    // var graph = rgraphic.graph;
+    // // is Node alreay existing
+    // var atExistingNode = (graph.getNode(metadata.id) != null);
 
-    if (metadata.previous != null) {
-        graph.removeAdjacence(metadata.previous.id, root.id);
-        graph.addAdjacence(graph.getNode(metadata.id), graph.getNode(metadata.previous.id));
-    }
+    // addToScroll(3000, metadata.name + (atExistingNode ? " (&middot;)" : ""));
 
-    rgraphic.compute('end');
-    graph.eachNode(function(n) {
-        position = n.getPos('end');
-        position.theta = (Math.PI * 2) - ((position.theta - (Math.PI / 16)) / 1.875);
-    });
-    rgraphic.fx.animate({
-        modes: ['polar'],
-        duration: 1250
-    });
+    // if (!atExistingNode) {
+    //     graph.addNode(metadata);
+    //     graph.addAdjacence(graph.getNode(metadata.id), graph.getNode(root.id));
+    // }
+
+    // if (metadata.previous != null) {
+    //     graph.removeAdjacence(metadata.previous.id, root.id);
+    //     graph.addAdjacence(graph.getNode(metadata.id), graph.getNode(metadata.previous.id));
+    // }
+
+    // rgraphic.compute('end');
+    // graph.eachNode(function(n) {
+    //     position = n.getPos('end');
+    //     position.theta = (Math.PI * 2) - ((position.theta - (Math.PI / 16)) / 1.875);
+    // });
+    // rgraphic.fx.animate({
+    //     modes: ['polar'],
+    //     duration: 1250
+    // });
 
     return atExistingNode;
 }
@@ -69,7 +83,7 @@ function loadArticle(title, previousMetadata) {
             rvprop: "content",
             format: "json"
         },
-        function(data) {
+        function (data) {
             extractField(data, previousMetadata)
         }
     );
@@ -97,7 +111,7 @@ function extractField(data, previousMetadata) {
 function addToScroll(fade, name) {
     var spanner = $('<span class="scroll">' + name + '<br/></span>')
     $('#listing').append(spanner);
-    $('#listing>span').fadeOut(fade, function() {
+    $('#listing>span').fadeOut(fade, function () {
         $(this).remove();
     });
 }
