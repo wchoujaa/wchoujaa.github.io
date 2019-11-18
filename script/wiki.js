@@ -3,7 +3,7 @@ var lang = 'en';
 
 var rotate = 0;
 var spread = 50;
-var maxLink = -1;
+var maxLink = 1;
 
 $(document).ready(function () {
 
@@ -14,7 +14,8 @@ $(document).ready(function () {
    };
 
    var parser = function () {
-
+      console.log(maxLink);
+      
       var names = $('#test').val().split(',');
       
       for (i = 0; i < names.length; i++) {
