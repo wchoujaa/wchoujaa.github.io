@@ -157,6 +157,7 @@ function loadArticle(title, previousMetadata) {
 }
 
 function extractField(data, previousMetadata) {
+   if(!data.query) return;
    var page = data.query.pages;
    for (i in page) {
       var title = page[i].title;
