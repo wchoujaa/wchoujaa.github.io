@@ -19,7 +19,9 @@ $(document).ready(function () {
       var names = $('#test').val().split(',');
       
       for (i = 0; i < names.length; i++) {
-         loadArticle(names[i].page);
+         console.log(names[i].page);
+         
+         loadArticle(names[i]);
 
          process(names[i], maxLink).then(function(val) {
            var nameList = val;
