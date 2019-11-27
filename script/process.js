@@ -8,10 +8,10 @@ async function process(article, percent) {
   //sort them by frequency
   //var ls = nouns.out('topk').slice(0,percent);
   var ls = doc.section(0).links();
-  var seeAlsoSection = doc.sections('see also');
+  var seeAlsoSection = doc.sections('See also');
   
   console.log(percent);
-  console.log(seeAlsoSectin);
+  console.log(seeAlsoSection);
   
   if(percent && percent != -1)
     ls = ls.slice(0,percent);
