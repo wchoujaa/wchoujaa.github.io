@@ -82,8 +82,15 @@ function init() {
 			enable: true,
 			type: 'Native',
 			onClick: function (node) {
+ 
 				if (node) {
 					rgraphic.onClick(node.id);
+				}
+			},
+			onRightClick: function(node){
+				if(node){
+					rgraphic.graph.removeNode(node.id);
+					node.domElement.innerHTML = "";
 				}
 			},
 			onMouseEnter: function (node, eventInfo, e) {
@@ -137,6 +144,8 @@ function init() {
 				$(domElement).removeClass('trunk');
 				$(domElement).addClass('leaf');
 			}
+
+			node.domElement = domElement;
 		}
 	});
 }
