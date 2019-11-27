@@ -20,7 +20,7 @@ async function process(article, percent) {
     ls = ls.concat(secondSection.links().slice(0,percent));   
   }
   if(seeAlsoSection){
-    ls = ls.concat(seeAlsoSection.links());    
+    ls = ls.concat(seeAlsoSection.links().slice(0,percent));    
   }
   return ls;
 }
