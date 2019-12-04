@@ -28,26 +28,24 @@ function onSubmit(e) {
     var names = $('#test').val().split(',');
     if (names == "") return false;
     for (i = 0; i < names.length; i++) {
-        loadArticle(names[i]);
-
-        process(names[i], maxLink).then(function (val) {
-            var nameList = val;
-
+        var pageName = names[i];
+        loadArticle(pageName);
+        process(pageName, maxLink).then(function (links) {
+            var nameList = links;
             for (var j = 0; j < nameList.length; j++) {
                 loadArticle(nameList[j].page);
             }
         });
     }
+
     return false;
 }
 
 function displayNode(text, metadata) {
     var nodes = graph.nodes.slice();
     var links = graph.links.slice();
-    //console.log(nodes);
 
-
-    var atExistingNode = (d3.select('#name' + metadata.id).size() > 0);
+    var atExistingNode = isNodeExist(metadata);
 
     addToScroll(3000, metadata.name + (atExistingNode ? " (&middot;)" : ""));
 
@@ -88,8 +86,38 @@ function displayNode(text, metadata) {
     return atExistingNode;
 }
 
-function loadArticle(title, previousMetadata) {
-    $.getJSON(
+async function loadArticleLink(title) {
+
+    if (!isNodeExistByName(title)) return;
+
+    var metadata = metadataByName(title);
+
+
+    process(title, "max").then(function (val) {
+        if (!metadata) return; // if deleted during async call
+        var nameList = val;
+
+        var links = [];
+
+        for (var j = 0; j < nameList.length; j++) {
+            var linkName = nameList[j].page;
+            if (isNodeExistByName(linkName)) {
+                var metadataLink = metadataByName(linkName);
+                links.push(metadataLink);
+            }
+        }
+
+        if (metadata.links && metadata.links != links) {
+            return;
+        }
+        metadata.links = links;
+
+    });
+}
+
+async function loadArticle(title, previousMetadata) {
+    var metadata;
+    await $.getJSON(
         "https://en.wikipedia.org/w/api.php?callback=?", {
         titles: title,
         action: "query",
@@ -98,15 +126,17 @@ function loadArticle(title, previousMetadata) {
         format: "json"
     },
         function (data) {
-            extractField(data, previousMetadata)
+            metadata = extractField(data, previousMetadata)
         }
     );
+    return metadata[0];
 }
 
 function extractField(data, previousMetadata) {
 
-    if (!data.query) return;
+    if (!data.query) return null;
     var page = data.query.pages;
+    var entries = [];
     for (i in page) {
         var title = page[i].title;
         var pageid = page[i].pageid;
@@ -115,13 +145,17 @@ function extractField(data, previousMetadata) {
             break;
         }
         var text = page[i].revisions[0]["*"];
-        entry(text, {
+        var metadata = {
             id: pageid,
             name: title,
             previous: previousMetadata
-        });
+        };
+        entries.push(metadata);
+        entry(text, metadata);
         break;
     }
+
+    return entries;
 }
 
 function addToScroll(fade, name) {

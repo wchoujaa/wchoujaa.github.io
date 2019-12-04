@@ -1,26 +1,18 @@
 var labelType, useGradients, nativeTextSupport, animate, rgraphic;
-
-(function () {
-    var ua = navigator.userAgent,
-        iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),
-        typeOfCanvas = typeof HTMLCanvasElement,
-        nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
-        textSupport = nativeCanvasSupport &&
-            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
-
-    labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
-    nativeTextSupport = labelType == 'Native';
-    useGradients = nativeCanvasSupport;
-    animate = !(iStuff || !nativeCanvasSupport);
-})();
-
 var link;
 var node;
+var mLink;
 var color;
 var simulation;
 var width = screen.width;
 var height = screen.height;
 var g;
+var padding = 12;
+var borderRadius = 6;
+var strokeWidth = 4;
+var strokeColor = "rgba(0, 0, 0, 0.82)"
+var hoverselectedpadding = 22;
+var selected;
 
 var rootDictionary = {
     'en': {
@@ -55,6 +47,23 @@ var rootDictionary = {
 
 var root;
 
+(function () {
+    var ua = navigator.userAgent,
+        iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),
+        typeOfCanvas = typeof HTMLCanvasElement,
+        nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
+        textSupport = nativeCanvasSupport &&
+            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+
+    labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
+    nativeTextSupport = labelType == 'Native';
+    useGradients = nativeCanvasSupport;
+    animate = !(iStuff || !nativeCanvasSupport);
+})();
+
+
+
+
 function init() {
 
     var svg = d3.select("svg");
@@ -86,6 +95,7 @@ function init() {
 
     link = g.append("g").attr("stroke", "#000").attr("class", "links").attr("stroke-width", 1.5).selectAll(".link");
     node = g.append("g").attr("stroke", "#fff").attr("class", "nodes").attr("stroke-width", 1.5).selectAll(".node");
+    mLink = g.append("g").attr("stroke", "#fef").attr("class", "mlinks").attr("stroke-width", 2.5).selectAll(".mlink");
 
     svg.call(d3.zoom()
         .extent([
@@ -101,12 +111,16 @@ function init() {
 }
 
 
-var padding = 12;
-var borderRadius = 6;
-var strokeWidth = 4;
-var strokeColor = "rgba(0, 0, 0, 0.82)"
 
-function restart(graph) {
+function restart(graph, metaLinks) {
+
+    var mLinks = (!metaLinks) ? [] : metaLinks;
+
+    mLink = mLink.data(mLinks, function (d) { return d.source.id + "-" + d.target.id; });
+
+    mLink.exit().remove();
+
+    mLink = mLink.enter().append("line").merge(mLink);
 
     node = node.data(graph.nodes, function (d) {
         return d.id;
@@ -116,9 +130,11 @@ function restart(graph) {
         d3.select(this).remove();
     });
 
-    var nodeEnter = node.enter().append("g").attr("class", "nodes").attr("id", (d) =>
-        "name" + d.id
-    );
+    var nodeEnter = node.enter().append("g")
+        .attr("class", "nodes")
+        .attr("id", (d) =>
+            "name" + d.id
+        ).attr("name", (d) => d.name);
 
     nodeEnter
         .on('mouseover', mouseOverHandler)
@@ -133,8 +149,8 @@ function restart(graph) {
         .text(function (d) {
             return d.name;
         }).each(function (d) {
-            d["bbox"] = this.getBBox()
-            d3.select(this).attr("transform", "translate(" + -d["bbox"].width / 2 + "," + 0 + ")")
+            d["bbox"] = this.getBBox();
+            d3.select(this).attr("transform", "translate(" + -d["bbox"].width / 2 + "," + 0 + ")");
         });
 
     nodeEnter.insert("rect", ":first-child")
@@ -161,7 +177,6 @@ function restart(graph) {
     node = nodeEnter.merge(node);
     // Apply the general update pattern to the links.
 
-
     link = link.data(graph.links, function (d) { return d.source.id + "-" + d.target.id; });
 
     link.exit().remove();
@@ -179,6 +194,20 @@ function restart(graph) {
 
 
 function ticked() {
+
+    mLink
+        .attr("x1", function (d) {
+            return d.source.x;
+        })
+        .attr("y1", function (d) {
+            return d.source.y;
+        })
+        .attr("x2", function (d) {
+            return d.target.x;
+        })
+        .attr("y2", function (d) {
+            return d.target.y;
+        });
 
     node
         .attr("transform", function (d) {
@@ -198,6 +227,8 @@ function ticked() {
         .attr("y2", function (d) {
             return d.target.y;
         });
+
+
 }
 
 
@@ -219,18 +250,91 @@ function zoomed() {
 }
 
 function clicked() {
-    deselect();
-    d3.select(this).selectAll('.nodes > rect').attr("stroke-width", strokeWidth + 2).attr("stroke", "black")
+
+    d3.select(this).selectAll('.nodes > rect').attr("stroke-width", strokeWidth + 2).attr("stroke", "black");
+    var metadata = d3.select(this).data()[0];
+    metadata.selected = !metadata.selected;
+    selected = metadata.selected;
+    if (metadata.selected && metadata.links) {
+        restart(graph, getLinks(metadata));
+    }
+
     d3.event.stopPropagation();
 
 }
 
 function mouseOutHandler() {
-    d3.select(this).selectAll('.nodes > rect').attr("stroke-width", strokeWidth)
+    d3.select(this).selectAll('.nodes > rect')
+        .attr("width", function (d) {
+            return d.bbox.width + padding;
+        })
+        .attr("height", function (d) {
+            return d.bbox.height + padding;
+        })
+        .attr("x", function (d) {
+            return d.bbox.x - (d.bbox.width + padding) / 2;
+        })
+        .attr("y", function (d) {
+            return d.bbox.y - padding / 2;
+        });
+
+    var metadata = d3.select(this).data()[0];
+
+    if (!selected && metadata.links) {
+        restart(graph);
+    }
 }
 
 function mouseOverHandler() {
-    d3.select(this).selectAll('.nodes > rect').attr("stroke-width", strokeWidth + 2);
+    d3.select(this).selectAll('.nodes > rect')
+        .attr("width", function (d) {
+            return d.bbox.width + padding + hoverselectedpadding;
+        })
+        .attr("height", function (d) {
+            return d.bbox.height + padding + hoverselectedpadding;
+        })
+        .attr("x", function (d) {
+            return d.bbox.x - (d.bbox.width + padding) / 2 - hoverselectedpadding / 2;
+        })
+        .attr("y", function (d) {
+            return d.bbox.y - padding / 2 - hoverselectedpadding / 2;
+        });
+    var metadata = d3.select(this).data()[0];
+
+    if (!selected && metadata.links) {
+        restart(graph, getLinks(metadata));
+    } else {
+        loadArticleLink(metadata.name);
+    }
+}
+
+function getLinks(metadata) {
+    var mlinks = [];
+
+    for (let i = 0; i < metadata.links.length; i++) {
+        const metadataLink = metadata.links[i];
+        var atExistingNode = isNodeExist(metadataLink);
+        if (atExistingNode) {
+
+            mlinks.push({
+                "source": metadata,
+                "target": metadataLink
+            })
+        }  
+    }
+    return mlinks;
+}
+
+function isNodeExist(metadata) {
+    return (d3.select('#name' + metadata.id).size() > 0);
+}
+
+function isNodeExistByName(pageName) {
+    return (d3.select('[name=' + '"' + pageName + '"' + ']').size() > 0);
+}
+
+function metadataByName(pageName) {
+    return d3.select('[name=' + '"' + pageName + '"' + "]").data()[0];
 }
 
 function dblclick(d) {

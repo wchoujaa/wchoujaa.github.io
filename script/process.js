@@ -5,6 +5,7 @@ async function process(article, percent) {
 
   //get the wikipedia plaintext with wtf_wikipedia
   //let text =  await wtf.fetch(article).then(doc=> doc.plaintext());
+ 
   let doc = await wtf.fetch(article);
   doct = doc;
   //get all the nouns from the text
