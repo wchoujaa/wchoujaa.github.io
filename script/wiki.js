@@ -1,36 +1,10 @@
-var graph;
 var maxLink = 5;
+var graph;
 $(document).ready(function () {
     graph = init();
-    $("#submit").click(function (e) {
- 
-        var names = $('#test').val().split(',');
-        for (i = 0; i < names.length; i++) {
-            loadArticle(names[i]);
-            process(names[i], maxLink).then(function (val) {
-                var nameList = val;
-                for (var j = 0; j < nameList.length; j++) {
-                    loadArticle(nameList[j].normal);
-                }
-            });
-        }
-        return false;
-    });
-    $('#topic').submit(function (e) {
-        e.preventDefault();
 
-        var names = $('#test').val().split(',');
-        for (i = 0; i < names.length; i++) {
-            loadArticle(names[i]);
-            process(names[i], maxLink).then(function (val) {
-                var nameList = val;
-                for (var j = 0; j < nameList.length; j++) {
-                    loadArticle(nameList[j].normal);
-                }
-            });
-        }
-        return false;
-    });
+    $("#submit").click(onSubmit);
+    $('#title').submit(onSubmit);
 
 
     $(window).resize(function () {
@@ -42,38 +16,80 @@ $(document).ready(function () {
     $('#infovis').css('width', screen.width).css('height', screen.height);
     $('#infovis').css('top', ((($(window).height() - screen.height) / 2)));
 
-
+   $('#branch').change(function () {
+      maxLink = $('#branch').val();
+   });
 
 });
 
-function displayNode(text, metadata) {
+function onSubmit(e) {
+    e.preventDefault();
 
-    var atExistingNode = (d3.select('#name' + metadata.id) != null);
+    var names = $('#test').val().split(',');
+    if (names == "") return false;
+    for (i = 0; i < names.length; i++) {
+        loadArticle(names[i]);
+        process(names[i], maxLink).then(function (val) {
+            console.log(maxLink);
+            
+            var nameList = val;
+            for (var j = 0; j < nameList.length; j++) {
+                loadArticle(nameList[j].normal);
+            }
+        });
+    }
+    return false;
+}
+
+function displayNode(text, metadata) {
+    var nodes = graph.nodes.slice();
+    var links = graph.links.slice();
+    //console.log(nodes);
+
+
+    var atExistingNode = (d3.select('#name' + metadata.id).size() > 0);
 
     addToScroll(3000, metadata.name + (atExistingNode ? " (&middot;)" : ""));
 
     if (!atExistingNode) {
-        graph.nodes.push(metadata);
-        graph.links.push({
-            "source": metadata.id,
-            "target": root.id
+
+        nodes.push(metadata);
+
+        links.push({
+            "source": metadata,
+            "target": root
         })
     }
 
     if (metadata.previous != null) {
-        graph.links = graph.links.filter(link => link.source == metadata.previous.id && link.target == root.id);
-        graph.links.push({
-            "source": metadata.id,
-            "target": metadata.previous.id
+
+        links = links.filter(link => !(link.source.id == metadata.previous.id && link.target.id == root.id));
+        links = links.filter(link => !(link.target.id == metadata.previous.id && link.source.id == root.id));
+
+        if (atExistingNode) {
+            var previous = metadata.previous;
+            metadata = d3.select('#name' + metadata.id).data()[0];
+            metadata.previous = previous;
+        }
+
+        links.push({
+            "source": metadata,
+            "target": metadata.previous
         })
     }
 
+    graph = {
+        "nodes": nodes,
+        "links": links
+    }
 
     restart(graph);
+
     return atExistingNode;
 }
 
 function loadArticle(title, previousMetadata) {
+
     $.getJSON(
         "https://en.wikipedia.org/w/api.php?callback=?", {
         titles: title,
@@ -89,7 +105,8 @@ function loadArticle(title, previousMetadata) {
 }
 
 function extractField(data, previousMetadata) {
-    if(!data.query) return;
+
+    if (!data.query) return;
     var page = data.query.pages;
     for (i in page) {
         var title = page[i].title;
@@ -117,6 +134,7 @@ function addToScroll(fade, name) {
 }
 
 function entry(text, metadata) {
+
     if (displayNode(text, metadata)) {
         return;
     }

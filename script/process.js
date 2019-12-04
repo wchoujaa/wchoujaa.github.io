@@ -14,7 +14,7 @@ async function process(article, percent) {
   var seeAlsoSection = doc.sections('See also');
   var secondSection = doc.sections(1);
  
-  if(percent && percent != -1)
+  if(percent && percent != "max")
     ls = ls.slice(0,percent);
   if(secondSection){
     ls = ls.concat(secondSection.links().slice(0,percent));   

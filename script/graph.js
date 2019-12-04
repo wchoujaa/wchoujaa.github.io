@@ -13,10 +13,6 @@ var labelType, useGradients, nativeTextSupport, animate, rgraphic;
     useGradients = nativeCanvasSupport;
     animate = !(iStuff || !nativeCanvasSupport);
 })();
-var root = {
-    id: 2403,
-    name: "Philosophie"
-};
 
 var link;
 var node;
@@ -26,7 +22,7 @@ var width = screen.width;
 var height = screen.height;
 var g;
 
-var root = {
+var rootDictionary = {
     'en': {
         id: 13692155,
         name: "Philosophy"
@@ -57,6 +53,8 @@ var root = {
     }
 }
 
+var root;
+
 function init() {
 
     var svg = d3.select("svg");
@@ -65,15 +63,19 @@ function init() {
 
     color = d3.scaleOrdinal(d3.schemeCategory10);
 
-    var graph = { "nodes": [], "links": [] };
+    var graph = {
+        "nodes": [],
+        "links": []
+    };
 
-    graph.nodes.push(root["en"]);
+    root = rootDictionary["en"];
+
+    graph.nodes.push(root);
 
     simulation = d3.forceSimulation(graph.nodes)
         .force("charge", d3.forceManyBody())
-        .force("link", d3.forceLink(graph.links).distance(200))
+        .force("link", d3.forceLink().distance(75).strength(0.08))
         .force("center", d3.forceCenter(width / 2, height / 2))
-
         .alphaTarget(1)
         .on("tick", ticked);
 
@@ -81,35 +83,118 @@ function init() {
         .on("start", dragstarted)
         .on("drag", dragged)
         .on("end", dragended));
-    link = g.append("g").attr("stroke", "#000").attr("stroke-width", 1.5).selectAll(".link");
-    node = g.append("g").attr("stroke", "#fff").attr("stroke-width", 1.5).selectAll(".node");
+
+    link = g.append("g").attr("stroke", "#000").attr("class", "links").attr("stroke-width", 1.5).selectAll(".link");
+    node = g.append("g").attr("stroke", "#fff").attr("class", "nodes").attr("stroke-width", 1.5).selectAll(".node");
+
     svg.call(d3.zoom()
-        .extent([[0, 0], [width, height]])
-        .scaleExtent([1, 8])
+        .extent([
+            [0, 0],
+            [width, height]
+        ])
+        .scaleExtent([0.1, 8])
         .on("zoom", zoomed));
 
     restart(graph);
+    //test();
     return graph;
 }
 
 
-function restart(graph) {
-    var nodes = graph.nodes;
-    var links = graph.links;
-    // Apply the general update pattern to the nodes.
-    node = node.data(nodes, function (d) { return d.id; });
-    node.exit().remove();
-    node = node.enter().append("circle").attr('id', function (d) { return 'name' + d.id; }).attr("fill", function (d) { return color(d.id); }).attr("r", 8).merge(node);
+var padding = 12;
+var borderRadius = 6;
+var strokeWidth = 4;
+var strokeColor = "rgba(0, 0, 0, 0.82)"
 
+function restart(graph) {
+
+    node = node.data(graph.nodes, function (d) {
+        return d.id;
+    });
+
+    node.exit().each(function () {
+        d3.select(this).remove();
+    });
+
+    var nodeEnter = node.enter().append("g").attr("class", "nodes").attr("id", (d) =>
+        "name" + d.id
+    );
+
+    nodeEnter
+        .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended));
+
+    nodeEnter.append("text")
+        .text(function (d) {
+            return d.name;
+        }).each(function (d) {
+            d["bbox"] = this.getBBox()
+            d3.select(this).attr("transform", "translate(" + -d["bbox"].width / 2 + "," + 0 + ")")
+        });
+
+    nodeEnter.insert("rect", ":first-child")
+        .attr("class", "rect")
+        .attr("width", function (d) {
+            return d.bbox.width + padding;
+        })
+        .attr("height", function (d) {
+            return d.bbox.height + padding;
+        })
+        .attr("x", function (d) {
+            return d.bbox.x - (d.bbox.width + padding) / 2;
+        })
+        .attr("y", function (d) {
+            return d.bbox.y - padding / 2;
+        })
+        .attr("rx", borderRadius)
+        .attr("stroke-width", strokeWidth)
+        .attr("stroke", strokeColor)
+        .attr("fill", function (d) {
+            return color(d.group);
+        })
+
+    node = nodeEnter.merge(node);
     // Apply the general update pattern to the links.
-    link = link.data(links, function (d) { return d.source + "-" + d.target; });
+
+     
+    link = link.data(graph.links, function(d) { return d.source.id + "-" + d.target.id; });
+
     link.exit().remove();
+
     link = link.enter().append("line").merge(link);
 
-    // Update and restart the simulation.
-    simulation.nodes(nodes);
-    simulation.force("link").links(links);
-    simulation.alpha(1).restart();
+    // Update and start the simulation.
+    simulation.nodes(graph.nodes);
+    simulation.force("link").links(graph.links);
+    simulation.alpha(2);
+    simulation.restart();
+
+}
+
+
+
+function ticked() {
+
+    node
+        .attr("transform", function (d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        });
+
+    link
+        .attr("x1", function (d) {
+            return d.source.x;
+        })
+        .attr("y1", function (d) {
+            return d.source.y;
+        })
+        .attr("x2", function (d) {
+            return d.target.x;
+        })
+        .attr("y2", function (d) {
+            return d.target.y;
+        });
 }
 
 
@@ -131,13 +216,67 @@ function zoomed() {
 }
 
 
+function test() {
+    var a = {
+        id: "a",
+        name: "a"
+    },
+        b = {
+            id: "b",
+            name: "b"
 
-function ticked() {
-    node.attr("cx", function (d) { return d.x; })
-        .attr("cy", function (d) { return d.y; })
+        },
+        c = {
+            id: "c",
+            name: "c"
 
-    link.attr("x1", function (d) { return d.source.x; })
-        .attr("y1", function (d) { return d.source.y; })
-        .attr("x2", function (d) { return d.target.x; })
-        .attr("y2", function (d) { return d.target.y; });
+        },
+        nodes = [a, b, c],
+        links = [];
+    d3.timeout(function () {
+        links.push({
+            source: a,
+            target: b
+        }); // Add a-b.
+        links.push({
+            source: b,
+            target: c
+        }); // Add b-c.
+        links.push({
+            source: c,
+            target: a
+        }); // Add c-a.
+        restart({
+            "nodes": nodes,
+            "links": links
+        });
+    }, 1000);
+
+    d3.interval(function () {
+        nodes.pop(); // Remove c.
+        links.pop(); // Remove c-a.
+        links.pop(); // Remove b-c.
+        restart({
+            "nodes": nodes,
+            "links": links
+        });
+    }, 2000, d3.now());
+
+    d3.interval(function () {
+        nodes.push(c); // Re-add c.
+        links.push({
+            source: b,
+            target: c
+        }); // Re-add b-c.
+        links.push({
+            source: c,
+            target: a
+        }); // Re-add c-a.
+        restart({
+            "nodes": nodes,
+            "links": links
+        });
+    }, 2000, d3.now() + 1000);
+
+
 }
