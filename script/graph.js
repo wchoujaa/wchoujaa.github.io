@@ -121,6 +121,9 @@ function restart(graph) {
     );
 
     nodeEnter
+        .on('mouseover', mouseOverHandler)
+        .on('mouseout', mouseOutHandler)
+        .on("click", clicked)
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
@@ -158,8 +161,8 @@ function restart(graph) {
     node = nodeEnter.merge(node);
     // Apply the general update pattern to the links.
 
-     
-    link = link.data(graph.links, function(d) { return d.source.id + "-" + d.target.id; });
+
+    link = link.data(graph.links, function (d) { return d.source.id + "-" + d.target.id; });
 
     link.exit().remove();
 
@@ -215,6 +218,32 @@ function zoomed() {
     g.attr("transform", d3.event.transform);
 }
 
+function clicked() {
+    deselect();
+    d3.select(this).selectAll('.nodes > rect').attr("stroke-width", strokeWidth + 2).attr("stroke", "black")
+    d3.event.stopPropagation();
+
+}
+
+function mouseOutHandler() {
+    d3.select(this).selectAll('.nodes > rect').attr("stroke-width", strokeWidth)
+}
+
+function mouseOverHandler() {
+    d3.select(this).selectAll('.nodes > rect').attr("stroke-width", strokeWidth + 2);
+}
+
+function dblclick(d) {
+    var value = d3.select(this).classed("fixed")
+    d3.select(this).classed("fixed", !value);
+
+    d3.event.stopPropagation();
+}
+
+
+function mouseTest() {
+
+}
 
 function test() {
     var a = {

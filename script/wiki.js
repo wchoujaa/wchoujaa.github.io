@@ -16,9 +16,9 @@ $(document).ready(function () {
     $('#infovis').css('width', screen.width).css('height', screen.height);
     $('#infovis').css('top', ((($(window).height() - screen.height) / 2)));
 
-   $('#branch').change(function () {
-      maxLink = $('#branch').val();
-   });
+    $('#branch').change(function () {
+        maxLink = $('#branch').val();
+    });
 
 });
 
@@ -29,10 +29,10 @@ function onSubmit(e) {
     if (names == "") return false;
     for (i = 0; i < names.length; i++) {
         loadArticle(names[i]);
+
         process(names[i], maxLink).then(function (val) {
-            console.log(val);
-            
             var nameList = val;
+
             for (var j = 0; j < nameList.length; j++) {
                 loadArticle(nameList[j].page);
             }
@@ -89,7 +89,6 @@ function displayNode(text, metadata) {
 }
 
 function loadArticle(title, previousMetadata) {
-
     $.getJSON(
         "https://en.wikipedia.org/w/api.php?callback=?", {
         titles: title,
