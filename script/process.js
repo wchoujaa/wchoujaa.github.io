@@ -2,6 +2,7 @@ var see;
 var doct;
 var ls2;
 async function process(article, percent) {
+   
   //get the wikipedia plaintext with wtf_wikipedia
   //let text =  await wtf.fetch(article).then(doc=> doc.plaintext());
   let doc =  await wtf.fetch(article);
