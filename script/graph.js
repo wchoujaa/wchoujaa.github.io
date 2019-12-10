@@ -1,3 +1,6 @@
+// a ameliorer : link max size = 50
+// auto fetch mlinks for each node display mlinks for each node
+
 var labelType, useGradients, nativeTextSupport, animate, rgraphic;
 var link;
 var node;
