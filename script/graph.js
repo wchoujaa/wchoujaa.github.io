@@ -7,13 +7,22 @@ var simulation;
 var width = screen.width;
 var height = screen.height;
 var g;
+var gScale;
 var padding = 12;
 var borderRadius = 6;
 var strokeWidth = 4;
 var strokeColor = "rgba(0, 0, 0, 0.82)"
 var hoverselectedpadding = 22;
 var selected;
-
+var zoom;
+var slider;
+var svg;
+var dezoomed;
+var dragXStart = 0;
+var dragYStart = 0;
+var startX = 0;
+var startY = 0;
+var scale = 1;
 var rootDictionary = {
     'en': {
         id: 13692155,
@@ -53,7 +62,7 @@ var root;
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -66,7 +75,7 @@ var root;
 
 function init() {
 
-    var svg = d3.select("svg");
+    svg = d3.select("svg");
     width = +svg.attr("width");
     height = +svg.attr("height");
 
@@ -88,10 +97,12 @@ function init() {
         .alphaTarget(1)
         .on("tick", ticked);
 
-    g = svg.append("g").call(d3.drag()
+    svg.call(d3.drag()
         .on("start", dragstarted)
         .on("drag", dragged)
-        .on("end", dragended));
+        .on("end", dragended));;
+    gScale = svg.append("g");
+    g = gScale.append("g");
 
     link = g.append("g").attr("stroke", "#000").attr("class", "links").attr("stroke-width", 1.5).selectAll(".link");
     node = g.append("g").attr("stroke", "#fff").attr("class", "nodes").attr("stroke-width", 1.5).selectAll(".node");
@@ -102,8 +113,21 @@ function init() {
             [0, 0],
             [width, height]
         ])
-        .scaleExtent([0.1, 8])
+        .scaleExtent([0.1, 1])
         .on("zoom", zoomed));
+
+    zoom = d3.zoom()
+        .scaleExtent([0.1, 1])
+        .on("zoom", zoomed);
+
+    slider = d3.select("body").append("p").append("input")
+        .datum({})
+        .attr("type", "range")
+        .attr("value", zoom.scaleExtent()[1] / 2)
+        .attr("min", zoom.scaleExtent()[0])
+        .attr("max", zoom.scaleExtent()[1])
+        .attr("step", (zoom.scaleExtent()[1] - zoom.scaleExtent()[0]) / 100)
+        .on("input", slided);
 
     restart(graph);
     //test();
@@ -116,7 +140,9 @@ function restart(graph, metaLinks) {
 
     var mLinks = (!metaLinks) ? [] : metaLinks;
 
-    mLink = mLink.data(mLinks, function (d) { return d.source.id + "-" + d.target.id; });
+    mLink = mLink.data(mLinks, function (d) {
+        return d.source.id + "-" + d.target.id;
+    });
 
     mLink.exit().remove();
 
@@ -177,7 +203,9 @@ function restart(graph, metaLinks) {
     node = nodeEnter.merge(node);
     // Apply the general update pattern to the links.
 
-    link = link.data(graph.links, function (d) { return d.source.id + "-" + d.target.id; });
+    link = link.data(graph.links, function (d) {
+        return d.source.id + "-" + d.target.id;
+    });
 
     link.exit().remove();
 
@@ -232,21 +260,56 @@ function ticked() {
 }
 
 
-function dragstarted() {
+function dragstarted(d) {
+
     d3.select(this).raise();
-    g.attr("cursor", "grabbing");
+    svg.attr("cursor", "grabbing");
+    if (d3.select(this).node().nodeName == "svg") {
+        dragXStart = d3.event.x;
+        dragYStart = d3.event.y;
+    }
 }
 
 function dragged(d) {
-    d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+
+    if (d3.select(this).node().nodeName == "svg") {
+        var x = startX - (dragXStart - d3.event.x);
+        var y = startY - (dragYStart - d3.event.y);
+        g.attr("transform", "translate(" + x + "," + y + ") ")
+
+    } else {
+        d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
+    }
 }
 
 function dragended() {
     g.attr("cursor", "grab");
+    if (d3.select(this).node().nodeName == "svg") {
+        startX -= (dragXStart - d3.event.x);
+        startY -= (dragYStart - d3.event.y);
+    }
 }
 
-function zoomed() {
-    g.attr("transform", d3.event.transform);
+function zoomed(d) {
+    var value = d3.event.transform.k;
+    gScale.attr("transform", "scale(" + value + ")");
+    slider.property("value", value);
+    if (value < 0.3) {
+        if (!dezoomed) {
+
+        }
+        dezoomed = true;
+    } else {
+        if (dezoomed) {
+
+        }
+        dezoomed = false;
+    }
+}
+
+function slided(d) {
+    gScale.attr("transform", "scale(" + d3.select(this).property("value") + ")");
+
 }
 
 function clicked() {
@@ -255,6 +318,7 @@ function clicked() {
     var metadata = d3.select(this).data()[0];
     metadata.selected = !metadata.selected;
     selected = metadata.selected;
+
     if (metadata.selected && metadata.links) {
         restart(graph, getLinks(metadata));
     }
@@ -320,7 +384,7 @@ function getLinks(metadata) {
                 "source": metadata,
                 "target": metadataLink
             })
-        }  
+        }
     }
     return mlinks;
 }
@@ -351,9 +415,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-        id: "a",
-        name: "a"
-    },
+            id: "a",
+            name: "a"
+        },
         b = {
             id: "b",
             name: "b"
