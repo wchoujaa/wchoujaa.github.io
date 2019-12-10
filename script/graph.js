@@ -23,7 +23,9 @@ var dragYStart = 0;
 var startX = 0;
 var startY = 0;
 var scale = 1;
-
+var fontSize = "";
+var fontSizeZoomed = "42px";
+var zoomTrshld = 0.5;
 var rootDictionary = {
     'en': {
         id: 13692155,
@@ -63,7 +65,7 @@ var root;
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -178,7 +180,7 @@ function restart(graph, metaLinks) {
         }).each(function (d) {
             d["bbox"] = this.getBBox();
             d3.select(this).attr("transform", "translate(" + -d["bbox"].width / 2 + "," + 0 + ")");
-        });
+        }).attr("font-size", fontSize);
 
     nodeEnter.insert("rect", ":first-child")
         .attr("class", "rect")
@@ -274,8 +276,8 @@ function dragstarted(d) {
 function dragged(d) {
 
     if (d3.select(this).node().nodeName == "svg") {
-        var x = startX - (dragXStart - d3.event.x);
-        var y = startY - (dragYStart - d3.event.y);
+        var x = startX - (dragXStart - d3.event.x) / scale;
+        var y = startY - (dragYStart - d3.event.y) / scale;
         g.attr("transform", "translate(" + x + "," + y + ") ")
 
     } else {
@@ -286,8 +288,8 @@ function dragged(d) {
 function dragended() {
     g.attr("cursor", "grab");
     if (d3.select(this).node().nodeName == "svg") {
-        startX -= (dragXStart - d3.event.x);
-        startY -= (dragYStart - d3.event.y);
+        startX -= (dragXStart - d3.event.x) / scale;
+        startY -= (dragYStart - d3.event.y) / scale;
     }
 }
 
@@ -308,18 +310,18 @@ function slided(d) {
     gScale.attr("transform", "scale(" + value + ")");
 
     zoomValue(value);
-
+    scale = value;
 }
 
 function zoomValue(value) {
-    if (value < 0.3) {
+    if (value < zoomTrshld) {
         if (!dezoomed) {
             //console.log("dezoom");
             node.selectAll("text")
                 .transition(500)
                 .style('opacity', o => {
                     return 1;
-                }).style("font-size", "34px");
+                }).style("font-size", (d) => (adjacency(d) >= 2) ? fontSizeZoomed : fontSize);
         }
         dezoomed = true;
     } else {
@@ -329,7 +331,7 @@ function zoomValue(value) {
                 .transition(500)
                 .style('opacity', o => {
                     return 1;
-                }).style("font-size", "34px");
+                }).style("font-size", fontSize);
         }
         dezoomed = false;
     }
@@ -412,6 +414,18 @@ function getLinks(metadata) {
     return mlinks;
 }
 
+function adjacency(metadata) {
+    var count = 0;
+    if (!metadata.id) return count;
+
+    graph.links.forEach(link => {
+        if (link.source.id == metadata.id) {
+            count++;
+        }
+    });
+    return count;
+}
+
 function isNodeExist(metadata) {
     return (d3.select('#name' + metadata.id).size() > 0);
 }
@@ -438,9 +452,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-            id: "a",
-            name: "a"
-        },
+        id: "a",
+        name: "a"
+    },
         b = {
             id: "b",
             name: "b"
