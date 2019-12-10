@@ -23,6 +23,7 @@ var dragYStart = 0;
 var startX = 0;
 var startY = 0;
 var scale = 1;
+
 var rootDictionary = {
     'en': {
         id: 13692155,
@@ -290,26 +291,48 @@ function dragended() {
     }
 }
 
-function zoomed(d) {
+function zoomed() {
+    console.log("zoom");
+
     var value = d3.event.transform.k;
     gScale.attr("transform", "scale(" + value + ")");
     slider.property("value", value);
+
+    zoomValue(value);
+
+}
+
+function slided(d) {
+    var value = d3.select(this).property("value");
+
+    gScale.attr("transform", "scale(" + value + ")");
+
+    zoomValue(value);
+
+}
+
+function zoomValue(value) {
     if (value < 0.3) {
         if (!dezoomed) {
-
+            //console.log("dezoom");
+            node.selectAll("text")
+                .transition(500)
+                .style('opacity', o => {
+                    return 1;
+                }).style("font-size", "34px");
         }
         dezoomed = true;
     } else {
         if (dezoomed) {
-
+            //console.log("zoom");
+            node.selectAll("text")
+                .transition(500)
+                .style('opacity', o => {
+                    return 1;
+                }).style("font-size", "34px");
         }
         dezoomed = false;
     }
-}
-
-function slided(d) {
-    gScale.attr("transform", "scale(" + d3.select(this).property("value") + ")");
-
 }
 
 function clicked() {
