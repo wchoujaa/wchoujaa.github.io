@@ -18,6 +18,7 @@ var zoom;
 var slider;
 var svg;
 var dezoomed;
+
 var dragXStart = 0;
 var dragYStart = 0;
 var startX = 0;
@@ -25,7 +26,9 @@ var startY = 0;
 var scale = 1;
 var fontSize = "";
 var fontSizeZoomed = "42px";
-var zoomTrshld = 0.5;
+var zoomTrshld = 0.6;
+var zoomTrshld2x = 0.3;
+
 var rootDictionary = {
     'en': {
         id: 13692155,
@@ -84,7 +87,7 @@ function init() {
 
     color = d3.scaleOrdinal(d3.schemeCategory10);
 
-    var graph = {
+    graph = {
         "nodes": [],
         "links": []
     };
@@ -107,9 +110,9 @@ function init() {
     gScale = svg.append("g");
     g = gScale.append("g");
 
-    link = g.append("g").attr("stroke", "#000").attr("class", "links").attr("stroke-width", 1.5).selectAll(".link");
-    node = g.append("g").attr("stroke", "#fff").attr("class", "nodes").attr("stroke-width", 1.5).selectAll(".node");
-    mLink = g.append("g").attr("stroke", "#fef").attr("class", "mlinks").attr("stroke-width", 2.5).selectAll(".mlink");
+    link = g.append("g").attr("class", "links").attr("stroke-width", 1.5).selectAll(".link");
+    node = g.append("g").attr("class", "nodes").attr("stroke-width", 1.5).selectAll(".node");
+    mLink = g.append("g").attr("class", "mlinks").attr("stroke-width", 2.5).selectAll(".mlink");
 
     svg.call(d3.zoom()
         .extent([
@@ -177,33 +180,19 @@ function restart(graph, metaLinks) {
     nodeEnter.append("text")
         .text(function (d) {
             return d.name;
-        }).each(function (d) {
-            d["bbox"] = this.getBBox();
-            d3.select(this).attr("transform", "translate(" + -d["bbox"].width / 2 + "," + 0 + ")");
-        }).attr("font-size", fontSize);
+        })
+        .attr('x', 12)
+        .attr('y', 3).attr("font-size", fontSize);
 
-    nodeEnter.insert("rect", ":first-child")
-        .attr("class", "rect")
-        .attr("width", function (d) {
-            return d.bbox.width + padding;
-        })
-        .attr("height", function (d) {
-            return d.bbox.height + padding;
-        })
-        .attr("x", function (d) {
-            return d.bbox.x - (d.bbox.width + padding) / 2;
-        })
-        .attr("y", function (d) {
-            return d.bbox.y - padding / 2;
-        })
-        .attr("rx", borderRadius)
-        .attr("stroke-width", strokeWidth)
-        .attr("stroke", strokeColor)
-        .attr("fill", function (d) {
-            return color(d.group);
-        })
+    nodeEnter.append("circle")
+        .attr("r", 5)
+        .attr("fill", function (d) { return color(d.group); })
 
     node = nodeEnter.merge(node);
+
+
+    zoomGraph();
+
     // Apply the general update pattern to the links.
 
     link = link.data(graph.links, function (d) {
@@ -222,7 +211,21 @@ function restart(graph, metaLinks) {
 
 }
 
+function zoomGraph() {
 
+    if (scale < zoomTrshld2x) {
+        node.selectAll("text")
+            .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "");
+    }
+    else if (scale < zoomTrshld) {
+        node.selectAll("text")
+            .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "");
+    }
+    else {
+        node.selectAll("text")
+            .transition(500).attr("class", "");
+    }
+}
 
 function ticked() {
 
@@ -294,10 +297,9 @@ function dragended() {
 }
 
 function zoomed() {
-    console.log("zoom");
 
     var value = d3.event.transform.k;
-    gScale.attr("transform", "scale(" + value + ")");
+    gScale.attr("transform", d3.event.transform);
     slider.property("value", value);
 
     zoomValue(value);
@@ -306,35 +308,17 @@ function zoomed() {
 
 function slided(d) {
     var value = d3.select(this).property("value");
-
+    var transform = gScale.attr("transform");
+  
     gScale.attr("transform", "scale(" + value + ")");
 
     zoomValue(value);
-    scale = value;
 }
 
 function zoomValue(value) {
-    if (value < zoomTrshld) {
-        if (!dezoomed) {
-            //console.log("dezoom");
-            node.selectAll("text")
-                .transition(500)
-                .style('opacity', o => {
-                    return 1;
-                }).style("font-size", (d) => (adjacency(d) >= 2) ? fontSizeZoomed : fontSize);
-        }
-        dezoomed = true;
-    } else {
-        if (dezoomed) {
-            //console.log("zoom");
-            node.selectAll("text")
-                .transition(500)
-                .style('opacity', o => {
-                    return 1;
-                }).style("font-size", fontSize);
-        }
-        dezoomed = false;
-    }
+    scale = value;
+    zoomGraph();
+
 }
 
 function clicked() {
