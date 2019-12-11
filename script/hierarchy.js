@@ -1,5 +1,5 @@
 function initHierarchy() {
-    g = svg.append("g").attr("transform", "translate(" + (width / 2 - 15) + "," + (height / 2 + 25) + ")");
+    g = svg.append("g").attr("id", "radial").attr("transform", "translate(" + (width / 2 - 15) + "," + (height / 2 + 25) + ")");
 
     var stratify = d3.stratify()
         .parentId(function (d) {
@@ -68,5 +68,5 @@ function initHierarchy() {
 }
 
 function restartRadial(graph) {
-    
+
 }

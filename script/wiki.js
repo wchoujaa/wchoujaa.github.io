@@ -49,20 +49,12 @@ $(document).ready(function () {
     init();
     initGraph();
     initHierarchy();
-
+    displayType();
     $("#submit").click(onSubmit);
     $('#title').submit(onSubmit);
     $("#change").click(function () {
         typeIndex = (typeIndex + 1) % vizType.length;
-        type = vizType[typeIndex];
-        if (type == graphType) {
-            d3.select("#graph").attr("class", "");
-            d3.select("#radial").attr("class", "hidden");
-        } else if (type == radialClusterType) {
-            d3.select("#graph").attr("class", "hidden");
-            d3.select("#radial").attr("class", "");
-
-        }
+        displayType();
     })
 
     $(window).resize(function () {
@@ -78,6 +70,17 @@ $(document).ready(function () {
         maxLink = $('#branch').val();
     });
 });
+
+function displayType() {
+    type = vizType[typeIndex];
+    if (type == graphType) {
+        d3.select("#graph").attr("class", "");
+        d3.select("#radial").attr("class", "hidden");
+    } else if (type == radialClusterType) {
+        d3.select("#graph").attr("class", "hidden");
+        d3.select("#radial").attr("class", "");
+    }
+}
 
 function onSubmit(e) {
     e.preventDefault();
