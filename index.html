@@ -14,16 +14,30 @@
 
 	<link rel="stylesheet" type="text/css" href="./css/wikipedia.css" media="screen" />
 	<style>
-		.links line {
+		.links {
 			stroke: #999;
 			stroke-opacity: 0.6;
+			stroke-width: 2.5;
+
 		}
 
 
+		.mlinks {
+			stroke: #eee;
+			stroke-width: 1.5;
+		}
 
 		.nodes circle {
 			stroke: #fff;
-			stroke-width: 1.5px;
+			r: 7;
+		}
+
+		.nodes circle.show {
+			r: 12;
+		}
+
+		.hidden {
+			display: none;
 		}
 
 		svg {
@@ -31,17 +45,16 @@
 			color: #000;
 		}
 
+		.nodes .hide {
+			display: none;
+		}
+
 		.nodes .dezoom {
-			font-size: 54px;
+			font-size: 24px;
 		}
 
 		.nodes .dezoom2x {
-			font-size: 94px;
-		}
-
-		.mlinks {
-			stroke: cornsilk;
-			stroke-width: 12px;
+			font-size: 54px;
 		}
 	</style>
 </head>
@@ -79,10 +92,7 @@
 			</form>
 			<input type="image" src="./image/submit.png" id="submit"></input>
 			<input type="image" src="./image/random.png" id="random"></input>
-			<input type="image" src="./image/rotatel.png" id="left" title="Rotate Left"></input>
-			<input type="image" src="./image/rotater.png" id="right" title="Rotate Right"></input>
-			<input type="image" src="./image/spread.png" id="spread" title="Spread"></input>
-			<input type="image" src="./image/squeeze.png" id="squeeze" title="Squeeze"></input>
+			<input type="image" src="./image/rotatel.png" id="change" title="change viz"></input>
 			<input type="image" src="./image/image.png" id="image" title="Export Image"></input>
 			<input type="image" src="./image/info.png" id="info" title="What is this?"></input>
 		</div>
@@ -95,18 +105,23 @@
 
 	<script>
 		(function (i, s, o, g, r, a, m) {
-			i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+			i['GoogleAnalyticsObject'] = r;
+			i[r] = i[r] || function () {
 				(i[r].q = i[r].q || []).push(arguments)
-			}, i[r].l = 1 * new Date(); a = s.createElement(o),
-				m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+			}, i[r].l = 1 * new Date();
+			a = s.createElement(o),
+				m = s.getElementsByTagName(o)[0];
+			a.async = 1;
+			a.src = g;
+			m.parentNode.insertBefore(a, m)
 		})(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
 
 		ga('create', 'UA-1155499-1', 'auto');
 		ga('send', 'pageview');
-
 	</script>
 
 	<script type="text/javascript" src="./script/graph.js"></script>
+	<script type="text/javascript" src="./script/hierarchy.js"></script>
 	<script type="text/javascript" src="./script/wiki.js"></script>
 </body>
 

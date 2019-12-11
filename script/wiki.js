@@ -1,11 +1,69 @@
 var maxLink = 5;
-var graph;
+var graph = {
+    "nodes": [],
+    "links": [],
+    "mLinks": []
+};
+var graphType = "graph";
+var radialClusterType = "radial Cluster"
+var vizType = [graphType, radialClusterType];
+var typeIndex = 0;
+var type = vizType[typeIndex];
+
+var rootDictionary = {
+    'en': {
+        id: 13692155,
+        name: "Philosophy"
+    },
+    'de': {
+        id: 490244,
+        name: "Philosophie"
+    },
+    'fr': {
+        id: 2403,
+        name: "Philosophie"
+    },
+    'ja': {
+        id: 110,
+        name: "&#21746;&#23398;"
+    },
+    'it': {
+        id: 1876512,
+        name: "Filosofia"
+    },
+    'es': {
+        id: 689592,
+        name: "Filosof&iacute;a"
+    },
+    'ru': {
+        id: 904,
+        name: "&#1060;&#1080;&#1083;&#1086;&#1089;&#1086;&#1092;&#1080;&#1103;"
+    }
+}
+var root;
+
 $(document).ready(function () {
-    graph = init();
+    root = rootDictionary["en"];
+
+    graph.nodes.push(root);
+    init();
+    initGraph();
+    initHierarchy();
 
     $("#submit").click(onSubmit);
     $('#title').submit(onSubmit);
+    $("#change").click(function () {
+        typeIndex = (typeIndex + 1) % vizType.length;
+        type = vizType[typeIndex];
+        if (type == graphType) {
+            d3.select("#graph").attr("class", "");
+            d3.select("#radial").attr("class", "hidden");
+        } else if (type == radialClusterType) {
+            d3.select("#graph").attr("class", "hidden");
+            d3.select("#radial").attr("class", "");
 
+        }
+    })
 
     $(window).resize(function () {
         $('#opening').css('width', $(window).width()).css('height', $(window).height() - 195);
@@ -19,7 +77,6 @@ $(document).ready(function () {
     $('#branch').change(function () {
         maxLink = $('#branch').val();
     });
-
 });
 
 function onSubmit(e) {
@@ -27,15 +84,27 @@ function onSubmit(e) {
 
     var names = $('#test').val().split(',');
     if (names == "") return false;
+    var articleLink = [];
+
     for (i = 0; i < names.length; i++) {
         var pageName = names[i];
         loadArticle(pageName);
+        articleLink.push(pageName);
         process(pageName, maxLink).then(function (links) {
             var nameList = links;
             for (var j = 0; j < nameList.length; j++) {
-                loadArticle(nameList[j].page);
+                articleLink.push(nameList[j].page);
+
+                loadArticle(nameList[j].page).then(function () {
+                    if (j == nameList.length) {
+                        articleLink.forEach(link => {
+                            loadArticleLink(link);
+                        });
+                    }
+                });
             }
         });
+
     }
 
     return false;
@@ -76,12 +145,10 @@ function displayNode(text, metadata) {
         })
     }
 
-    graph = {
-        "nodes": nodes,
-        "links": links
-    }
+    graph.nodes = nodes;
+    graph.links = links;
 
-    restart(graph);
+    restartVisualisation();
 
     return atExistingNode;
 }
@@ -97,34 +164,38 @@ async function loadArticleLink(title) {
         if (!metadata) return; // if deleted during async call
         var nameList = val;
 
-        var links = [];
-
         for (var j = 0; j < nameList.length; j++) {
             var linkName = nameList[j].page;
             if (isNodeExistByName(linkName)) {
                 var metadataLink = metadataByName(linkName);
-                links.push(metadataLink);
+                graph.mLinks.push({
+                    "source": metadata,
+                    "target": metadataLink
+                });
+                restartVisualisation();
             }
         }
-
-        if (metadata.links && metadata.links != links) {
-            return;
-        }
-        metadata.links = links;
-
     });
+}
+
+function restartVisualisation() {
+    if (type == graphType) {
+        restart(graph);
+    } else if (type == radialClusterType) {
+        restartRadial(graph);
+    }
 }
 
 async function loadArticle(title, previousMetadata) {
     var metadata;
     await $.getJSON(
         "https://en.wikipedia.org/w/api.php?callback=?", {
-        titles: title,
-        action: "query",
-        prop: "revisions",
-        rvprop: "content",
-        format: "json"
-    },
+            titles: title,
+            action: "query",
+            prop: "revisions",
+            rvprop: "content",
+            format: "json"
+        },
         function (data) {
             metadata = extractField(data, previousMetadata)
         }

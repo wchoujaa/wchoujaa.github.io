@@ -21,7 +21,8 @@ var zoom;
 var slider;
 var svg;
 var dezoomed;
-
+var linkStrength = 0.08;
+var gravity = 0.001;
 var dragXStart = 0;
 var dragYStart = 0;
 var startX = 0;
@@ -32,46 +33,13 @@ var fontSizeZoomed = "42px";
 var zoomTrshld = 0.6;
 var zoomTrshld2x = 0.3;
 
-var rootDictionary = {
-    'en': {
-        id: 13692155,
-        name: "Philosophy"
-    },
-    'de': {
-        id: 490244,
-        name: "Philosophie"
-    },
-    'fr': {
-        id: 2403,
-        name: "Philosophie"
-    },
-    'ja': {
-        id: 110,
-        name: "&#21746;&#23398;"
-    },
-    'it': {
-        id: 1876512,
-        name: "Filosofia"
-    },
-    'es': {
-        id: 689592,
-        name: "Filosof&iacute;a"
-    },
-    'ru': {
-        id: 904,
-        name: "&#1060;&#1080;&#1083;&#1086;&#1089;&#1086;&#1092;&#1080;&#1103;"
-    }
-}
-
-var root;
-
 (function () {
     var ua = navigator.userAgent,
         iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -87,35 +55,34 @@ function init() {
     svg = d3.select("svg");
     width = +svg.attr("width");
     height = +svg.attr("height");
+    startX = width / 2;
+    startY = height / 2;
+}
+
+
+function initGraph() {
 
     color = d3.scaleOrdinal(d3.schemeCategory10);
 
-    graph = {
-        "nodes": [],
-        "links": []
-    };
-
-    root = rootDictionary["en"];
-
-    graph.nodes.push(root);
-
     simulation = d3.forceSimulation(graph.nodes)
         .force("charge", d3.forceManyBody())
-        .force("link", d3.forceLink().distance(75).strength(0.08))
-        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("link", d3.forceLink().distance(75).strength(linkStrength))
+        .force('x', d3.forceX().strength(gravity))
+        .force('y', d3.forceY().strength(gravity))
         .alphaTarget(1)
         .on("tick", ticked);
 
     svg.call(d3.drag()
         .on("start", dragstarted)
         .on("drag", dragged)
-        .on("end", dragended));;
-    gScale = svg.append("g");
-    g = gScale.append("g");
+        .on("end", dragended));
 
-    link = g.append("g").attr("class", "links").attr("stroke-width", 1.5).selectAll(".link");
-    node = g.append("g").attr("class", "nodes").attr("stroke-width", 1.5).selectAll(".node");
-    mLink = g.append("g").attr("class", "mlinks").attr("stroke-width", 2.5).selectAll(".mlink");
+    gScale = svg.append("g").attr("id", "graph");
+    g = gScale.append("g").attr("transform", "translate(" + startX + "," + startY + ")");
+
+    mLink = g.append("g").attr("class", "mlinks").selectAll(".mlink");
+    link = g.append("g").attr("class", "links").selectAll(".link");
+    node = g.append("g").attr("class", "nodes").selectAll(".node");
 
     svg.call(d3.zoom()
         .extent([
@@ -132,10 +99,10 @@ function init() {
     slider = d3.select("body").append("p").append("input")
         .datum({})
         .attr("type", "range")
-        .attr("value", zoom.scaleExtent()[1] / 2)
         .attr("min", zoom.scaleExtent()[0])
         .attr("max", zoom.scaleExtent()[1])
         .attr("step", (zoom.scaleExtent()[1] - zoom.scaleExtent()[0]) / 100)
+        .attr("value", 1)
         .on("input", slided);
 
     restart(graph);
@@ -145,11 +112,9 @@ function init() {
 
 
 
-function restart(graph, metaLinks) {
+function restart(graph) {
 
-    var mLinks = (!metaLinks) ? [] : metaLinks;
-
-    mLink = mLink.data(mLinks, function (d) {
+    mLink = mLink.data(graph.mLinks, function (d) {
         return d.source.id + "-" + d.target.id;
     });
 
@@ -189,12 +154,11 @@ function restart(graph, metaLinks) {
 
     nodeEnter.append("circle")
         .attr("r", 5)
-        .attr("fill", function (d) { return color(d.group); })
+        .attr("fill", function (d) {
+            return color(d.group);
+        })
 
     node = nodeEnter.merge(node);
-
-
-    zoomGraph();
 
     // Apply the general update pattern to the links.
 
@@ -212,19 +176,18 @@ function restart(graph, metaLinks) {
     simulation.alpha(2);
     simulation.restart();
 
+    zoomGraph();
 }
 
 function zoomGraph() {
 
     if (scale < zoomTrshld2x) {
         node.selectAll("text")
-            .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "");
-    }
-    else if (scale < zoomTrshld) {
+            .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "hide");
+    } else if (scale < zoomTrshld) {
         node.selectAll("text")
-            .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "");
-    }
-    else {
+            .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "hide");
+    } else {
         node.selectAll("text")
             .transition(500).attr("class", "");
     }
@@ -312,7 +275,7 @@ function zoomed() {
 function slided(d) {
     var value = d3.select(this).property("value");
     var transform = gScale.attr("transform");
-  
+
     gScale.attr("transform", "scale(" + value + ")");
 
     zoomValue(value);
@@ -330,58 +293,27 @@ function clicked() {
     var metadata = d3.select(this).data()[0];
     metadata.selected = !metadata.selected;
     selected = metadata.selected;
-
-    if (metadata.selected && metadata.links) {
-        restart(graph, getLinks(metadata));
-    }
+    // open link
 
     d3.event.stopPropagation();
 
 }
 
 function mouseOutHandler() {
-    d3.select(this).selectAll('.nodes > rect')
-        .attr("width", function (d) {
-            return d.bbox.width + padding;
-        })
-        .attr("height", function (d) {
-            return d.bbox.height + padding;
-        })
-        .attr("x", function (d) {
-            return d.bbox.x - (d.bbox.width + padding) / 2;
-        })
-        .attr("y", function (d) {
-            return d.bbox.y - padding / 2;
-        });
+
 
     var metadata = d3.select(this).data()[0];
-
-    if (!selected && metadata.links) {
-        restart(graph);
-    }
+    node.selectAll("circle").attr("class", "");
 }
 
 function mouseOverHandler() {
-    d3.select(this).selectAll('.nodes > rect')
-        .attr("width", function (d) {
-            return d.bbox.width + padding + hoverselectedpadding;
-        })
-        .attr("height", function (d) {
-            return d.bbox.height + padding + hoverselectedpadding;
-        })
-        .attr("x", function (d) {
-            return d.bbox.x - (d.bbox.width + padding) / 2 - hoverselectedpadding / 2;
-        })
-        .attr("y", function (d) {
-            return d.bbox.y - padding / 2 - hoverselectedpadding / 2;
-        });
     var metadata = d3.select(this).data()[0];
+    var mLinks = graph.mLinks.filter(link => link.source.id == metadata.id);
 
-    if (!selected && metadata.links) {
-        restart(graph, getLinks(metadata));
-    } else {
-        loadArticleLink(metadata.name);
-    }
+    console.log(mLinks);
+
+    node.selectAll("circle").attr("class", (d) => (mLinks.filter(link => link.target.id == d.id || link.id == link.source.id).length > 0) ? "show" : "");
+
 }
 
 function getLinks(metadata) {
@@ -421,6 +353,34 @@ function isNodeExistByName(pageName) {
     return (d3.select('[name=' + '"' + pageName + '"' + ']').size() > 0);
 }
 
+function addLink(metadataSrc, metadataDst) {
+    var contain = graph.links.filter(link => link.source.id == metadataSrc.id && link.target.id == metadataDst.id);
+
+    if (contain.length == 0) {
+        graph.links.push({
+            metadataSrc,
+            metadataDst
+        });
+    }
+
+    restart(graph);
+
+}
+
+function addMlink(metadataSrc, metadataDst) {
+    var contain = graph.mLinks.filter(mlink => mlink.source.id == metadataSrc.id && mlink.target.id == metadataDst.id);
+
+    if (contain.length == 0) {
+        graph.mLinks.push({
+            metadataSrc,
+            metadataDst
+        });
+    }
+
+    restart(graph);
+
+}
+
 function metadataByName(pageName) {
     return d3.select('[name=' + '"' + pageName + '"' + "]").data()[0];
 }
@@ -439,9 +399,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-        id: "a",
-        name: "a"
-    },
+            id: "a",
+            name: "a"
+        },
         b = {
             id: "b",
             name: "b"
