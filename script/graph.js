@@ -9,8 +9,9 @@ var color;
 var simulation;
 var width = screen.width;
 var height = screen.height;
-var g;
+var gTranslate;
 var gScale;
+var gGraph;
 var padding = 12;
 var borderRadius = 6;
 var strokeWidth = 4;
@@ -39,7 +40,7 @@ var zoomTrshld2x = 0.3;
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -53,47 +54,31 @@ var zoomTrshld2x = 0.3;
 function init() {
 
     svg = d3.select("svg");
-    width = +svg.attr("width");
+    svg.attr("width", width);
     height = +svg.attr("height");
     startX = width / 2;
     startY = height / 2;
-}
-
-
-function initGraph() {
-
-    color = d3.scaleOrdinal(d3.schemeCategory10);
-
-    simulation = d3.forceSimulation(graph.nodes)
-        .force("charge", d3.forceManyBody())
-        .force("link", d3.forceLink().distance(75).strength(linkStrength))
-        .force('x', d3.forceX().strength(gravity))
-        .force('y', d3.forceY().strength(gravity))
-        .alphaTarget(1)
-        .on("tick", ticked);
 
     svg.call(d3.drag()
         .on("start", dragstarted)
         .on("drag", dragged)
         .on("end", dragended));
 
-    gScale = svg.append("g").attr("id", "graph");
-    g = gScale.append("g").attr("transform", "translate(" + startX + "," + startY + ")");
+    color = d3.scaleOrdinal(d3.schemeCategory10);
 
-    mLink = g.append("g").attr("class", "mlinks").selectAll(".mlink");
-    link = g.append("g").attr("class", "links").selectAll(".link");
-    node = g.append("g").attr("class", "nodes").selectAll(".node");
+    gScale = svg.append("g");
+    gTranslate = gScale.append("g").attr("transform", "translate(" + startX + "," + startY + ")");
 
     svg.call(d3.zoom()
         .extent([
             [0, 0],
             [width, height]
         ])
-        .scaleExtent([0.1, 1])
+        .scaleExtent([0.1, 10])
         .on("zoom", zoomed));
 
     zoom = d3.zoom()
-        .scaleExtent([0.1, 1])
+        .scaleExtent([0.1, 10])
         .on("zoom", zoomed);
 
     slider = d3.select("body").append("p").append("input")
@@ -104,10 +89,30 @@ function initGraph() {
         .attr("step", (zoom.scaleExtent()[1] - zoom.scaleExtent()[0]) / 100)
         .attr("value", 1)
         .on("input", slided);
+}
+
+
+function initGraph() {
+    gGraph
+
+    simulation = d3.forceSimulation(graph.nodes)
+        .force("charge", d3.forceManyBody())
+        .force("link", d3.forceLink().distance(75).strength(linkStrength))
+        .force('x', d3.forceX().strength(gravity))
+        .force('y', d3.forceY().strength(gravity))
+        .alphaTarget(1)
+        .on("tick", ticked);
+
+    gGraph = gTranslate.append("g").attr("id", "graph");
+
+    mLink = gGraph.append("g").attr("class", "mlinks").selectAll(".mlink");
+    link = gGraph.append("g").attr("class", "links").selectAll(".link");
+    node = gGraph.append("g").attr("class", "nodes").selectAll(".node");
+
+
 
     restart(graph);
     //test();
-    return graph;
 }
 
 
@@ -247,7 +252,7 @@ function dragged(d) {
     if (d3.select(this).node().nodeName == "svg") {
         var x = startX - (dragXStart - d3.event.x) / scale;
         var y = startY - (dragYStart - d3.event.y) / scale;
-        g.attr("transform", "translate(" + x + "," + y + ") ")
+        gTranslate.attr("transform", "translate(" + x + "," + y + ") ")
 
     } else {
         d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
@@ -255,7 +260,7 @@ function dragged(d) {
 }
 
 function dragended() {
-    g.attr("cursor", "grab");
+    gTranslate.attr("cursor", "grab");
     if (d3.select(this).node().nodeName == "svg") {
         startX -= (dragXStart - d3.event.x) / scale;
         startY -= (dragYStart - d3.event.y) / scale;
@@ -309,9 +314,7 @@ function mouseOutHandler() {
 function mouseOverHandler() {
     var metadata = d3.select(this).data()[0];
     var mLinks = graph.mLinks.filter(link => link.source.id == metadata.id);
-
-    console.log(mLinks);
-
+ 
     node.selectAll("circle").attr("class", (d) => (mLinks.filter(link => link.target.id == d.id || link.id == link.source.id).length > 0) ? "show" : "");
 
 }
@@ -399,9 +402,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-            id: "a",
-            name: "a"
-        },
+        id: "a",
+        name: "a"
+    },
         b = {
             id: "b",
             name: "b"

@@ -55,6 +55,7 @@ $(document).ready(function () {
     $("#change").click(function () {
         typeIndex = (typeIndex + 1) % vizType.length;
         displayType();
+        restartVisualisation();
     })
 
     $(window).resize(function () {
@@ -73,6 +74,7 @@ $(document).ready(function () {
 
 function displayType() {
     type = vizType[typeIndex];
+    
     if (type == graphType) {
         d3.select("#graph").attr("class", "");
         d3.select("#radial").attr("class", "hidden");
@@ -101,7 +103,7 @@ function onSubmit(e) {
                 loadArticle(nameList[j].page).then(function () {
                     if (j == nameList.length) {
                         articleLink.forEach(link => {
-                            loadArticleLink(link);
+                            //loadArticleLink(link);
                         });
                     }
                 });
