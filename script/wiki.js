@@ -58,14 +58,7 @@ $(document).ready(function () {
         restartVisualisation();
     })
 
-    $(window).resize(function () {
-        $('#opening').css('width', $(window).width()).css('height', $(window).height() - 195);
-        $('#infovis').css('left', (($(window).width() - screen.width) / 2));
-    });
 
-    $(window).resize();
-    $('#infovis').css('width', screen.width).css('height', screen.height);
-    $('#infovis').css('top', ((($(window).height() - screen.height) / 2)));
 
     $('#branch').change(function () {
         maxLink = $('#branch').val();
@@ -74,7 +67,7 @@ $(document).ready(function () {
 
 function displayType() {
     type = vizType[typeIndex];
-    
+
     if (type == graphType) {
         d3.select("#graph").attr("class", "");
         d3.select("#radial").attr("class", "hidden");
@@ -90,27 +83,37 @@ function onSubmit(e) {
     var names = $('#test').val().split(',');
     if (names == "") return false;
     var articleLink = [];
-
+    var count = 0;
+    var intervalTime = 500;
     for (i = 0; i < names.length; i++) {
         var pageName = names[i];
         loadArticle(pageName);
         articleLink.push(pageName);
+
         process(pageName, maxLink).then(function (links) {
             var nameList = links;
             for (var j = 0; j < nameList.length; j++) {
                 articleLink.push(nameList[j].page);
 
-                loadArticle(nameList[j].page).then(function () {
-                    if (j == nameList.length) {
-                        articleLink.forEach(link => {
-                            //loadArticleLink(link);
-                        });
-                    }
-                });
             }
+            var interval = setInterval(() => {
+                if (articleLink.length == count) {
+                    articleLink.forEach(link => {
+                        loadArticleLink(link);
+                    });
+                    clearInterval(interval);
+                } else {
+                    var link = articleLink[count];
+                    loadArticle(link);
+                }
+
+                count++;
+            }, intervalTime);
         });
 
     }
+
+
 
     return false;
 }
@@ -169,6 +172,7 @@ async function loadArticleLink(title) {
         if (!metadata) return; // if deleted during async call
         var nameList = val;
 
+
         for (var j = 0; j < nameList.length; j++) {
             var linkName = nameList[j].page;
             if (isNodeExistByName(linkName)) {
@@ -195,12 +199,12 @@ async function loadArticle(title, previousMetadata) {
     var metadata;
     await $.getJSON(
         "https://en.wikipedia.org/w/api.php?callback=?", {
-            titles: title,
-            action: "query",
-            prop: "revisions",
-            rvprop: "content",
-            format: "json"
-        },
+        titles: title,
+        action: "query",
+        prop: "revisions",
+        rvprop: "content",
+        format: "json"
+    },
         function (data) {
             metadata = extractField(data, previousMetadata)
         }

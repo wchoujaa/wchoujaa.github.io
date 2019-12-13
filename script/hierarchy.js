@@ -21,6 +21,7 @@ function initHierarchy() {
 
     restartRadial(graph);
 }
+
 var test2;
 function restartRadial(graph) {
 

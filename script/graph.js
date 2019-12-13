@@ -24,13 +24,13 @@ var svg;
 var dezoomed;
 var linkIteration = 0.7; // between 0 and 1
 var linkStrength = 0.73;
-var linkDistance = 15;
+var linkDistance = 21;
 var velocityDecay = 0.51;
 var repulsion = -37;
 var maxRepulsion = -1.1;
 var gravity = 0.003;
 var distanceMin = 0.5;
-var distanceMax = 10000;
+var distanceMax = 1000;
 var dragXStart = 0;
 var dragYStart = 0;
 var alphaDecay = 0.007;
@@ -41,11 +41,15 @@ var collideStrength = 0.3;
 var collideIteration = 0.1;
 var startX = 0;
 var startY = 0;
-var scale = 1;
 var fontSize = "";
 var fontSizeZoomed = "42px";
 var zoomTrshld = 3.5;
 var zoomTrshld2x = 0.6;
+
+var rotation = 0;
+var scale = 1;
+
+var holder;
 
 (function () {
     var ua = navigator.userAgent,
@@ -53,7 +57,7 @@ var zoomTrshld2x = 0.6;
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -65,10 +69,10 @@ var zoomTrshld2x = 0.6;
 
 
 function init() {
-
+    var rect = d3.select("svg").node().getBoundingClientRect();
     svg = d3.select("svg");
-    svg.attr("width", width);
-    height = +svg.attr("height");
+    width = rect.width;
+    height = rect.height;
     startX = width / 2;
     startY = height / 2;
 
@@ -81,7 +85,8 @@ function init() {
 
     gScale = svg.append("g");
     gTranslate = gScale.append("g").attr("transform", "translate(" + startX + "," + startY + ")");
-
+    gAngle = gTranslate.append("g");
+    holder = gAngle;
     svg.call(d3.zoom()
         .extent([
             [0, 0],
@@ -94,7 +99,7 @@ function init() {
         .scaleExtent([0.1, 10])
         .on("zoom", zoomed);
 
-    slider = d3.select("body").append("p").append("input")
+    slider = d3.select(".zoom-slider > input")
         .datum({})
         .attr("type", "range")
         .attr("min", zoom.scaleExtent()[0])
@@ -102,15 +107,22 @@ function init() {
         .attr("step", (zoom.scaleExtent()[1] - zoom.scaleExtent()[0]) / 100)
         .attr("value", 1)
         .on("input", slided);
+
+
+    d3.select("#nAngle").on("input", function () {
+        rotation = +this.value;
+        update(+this.value);
+    });
 }
 
 
 function initGraph() {
     simulation = d3.forceSimulation(graph.nodes)
-        .force("charge", d3.forceManyBody().strength(repulsion))
-        .force("link", d3.forceLink().distance(linkDistance)) 
-        .force('x', d3.forceX().strength(gravity))
-        .force('y', d3.forceY().strength(gravity))
+        .force("charge", d3.forceManyBody().strength(repulsion).distanceMax(distanceMax))
+        .force("link", d3.forceLink().distance(linkDistance))
+        .force('center', d3.forceCenter())
+        .alphaDecay(alphaDecay)
+
         .on("tick", ticked);
     /*     simulation = d3.forceSimulation(graph.nodes)
             .force("charge", d3.forceManyBody().strength((d) => (isLeaf(d) ? maxRepulsion : repulsion)).distanceMin(distanceMin).distanceMax(distanceMax))
@@ -123,7 +135,7 @@ function initGraph() {
             .force("collision", d3.forceCollide(r + 0.5).strength(collideStrength).iterations(collideIteration))
             .on("tick", ticked); */
 
-    gGraph = gTranslate.append("g").attr("id", "graph");
+    gGraph = holder.append("g").attr("id", "graph");
 
     mLink = gGraph.append("g").attr("class", "mlinks").selectAll(".mlink");
     link = gGraph.append("g").attr("class", "links").selectAll(".link");
@@ -174,6 +186,7 @@ function restart(graph) {
         .text(function (d) {
             return d.name;
         })
+
         .attr('x', 12)
         .attr('y', 3).attr("font-size", fontSize);
 
@@ -202,10 +215,21 @@ function restart(graph) {
     simulation.restart();
 
     zoomGraph();
+    update(rotation);
+}
+
+function update(nAngle) {
+
+    // adjust the text on the range slider
+    d3.select("#nAngle-value").text(nAngle);
+    d3.select("#nAngle").property("value", nAngle);
+    node.selectAll("text").attr("transform", "  rotate(" + -rotation + ")")
+    // rotate the text
+    gAngle
+        .attr("transform", "  rotate(" + nAngle + ")");
 }
 
 function zoomGraph() {
-    console.log(scale);
 
     if (scale <= zoomTrshld2x) {
         node.selectAll("text")
@@ -429,9 +453,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-            id: "a",
-            name: "a"
-        },
+        id: "a",
+        name: "a"
+    },
         b = {
             id: "b",
             name: "b"
