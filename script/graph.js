@@ -22,17 +22,30 @@ var zoom;
 var slider;
 var svg;
 var dezoomed;
-var linkStrength = 0.08;
-var gravity = 0.001;
+var linkIteration = 0.7; // between 0 and 1
+var linkStrength = 0.73;
+var linkDistance = 15;
+var velocityDecay = 0.51;
+var repulsion = -37;
+var maxRepulsion = -1.1;
+var gravity = 0.003;
+var distanceMin = 0.5;
+var distanceMax = 10000;
 var dragXStart = 0;
 var dragYStart = 0;
+var alphaDecay = 0.007;
+var alphaTarget = 2;
+var alphaMin = 0.11;
+var r = 5.5;
+var collideStrength = 0.3;
+var collideIteration = 0.1;
 var startX = 0;
 var startY = 0;
 var scale = 1;
 var fontSize = "";
 var fontSizeZoomed = "42px";
-var zoomTrshld = 0.6;
-var zoomTrshld2x = 0.3;
+var zoomTrshld = 3.5;
+var zoomTrshld2x = 0.6;
 
 (function () {
     var ua = navigator.userAgent,
@@ -40,7 +53,7 @@ var zoomTrshld2x = 0.3;
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -93,15 +106,22 @@ function init() {
 
 
 function initGraph() {
-    gGraph
-
     simulation = d3.forceSimulation(graph.nodes)
-        .force("charge", d3.forceManyBody())
-        .force("link", d3.forceLink().distance(75).strength(linkStrength))
+        .force("charge", d3.forceManyBody().strength(repulsion))
+        .force("link", d3.forceLink().distance(linkDistance)) 
         .force('x', d3.forceX().strength(gravity))
         .force('y', d3.forceY().strength(gravity))
-        .alphaTarget(1)
         .on("tick", ticked);
+    /*     simulation = d3.forceSimulation(graph.nodes)
+            .force("charge", d3.forceManyBody().strength((d) => (isLeaf(d) ? maxRepulsion : repulsion)).distanceMin(distanceMin).distanceMax(distanceMax))
+            .force("link", d3.forceLink().distance(linkDistance).strength(linkStrength).iterations(linkIteration))
+            .force('x', d3.forceX().strength(gravity))
+            .force('y', d3.forceY().strength(gravity))
+            .alphaDecay(alphaDecay)
+            .alphaMin(alphaMin)
+            .velocityDecay(velocityDecay)
+            .force("collision", d3.forceCollide(r + 0.5).strength(collideStrength).iterations(collideIteration))
+            .on("tick", ticked); */
 
     gGraph = gTranslate.append("g").attr("id", "graph");
 
@@ -178,18 +198,19 @@ function restart(graph) {
     // Update and start the simulation.
     simulation.nodes(graph.nodes);
     simulation.force("link").links(graph.links);
-    simulation.alpha(2);
+    simulation.alpha(alphaTarget);
     simulation.restart();
 
     zoomGraph();
 }
 
 function zoomGraph() {
+    console.log(scale);
 
-    if (scale < zoomTrshld2x) {
+    if (scale <= zoomTrshld2x) {
         node.selectAll("text")
             .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "hide");
-    } else if (scale < zoomTrshld) {
+    } else if (scale <= zoomTrshld) {
         node.selectAll("text")
             .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "hide");
     } else {
@@ -248,6 +269,8 @@ function dragstarted(d) {
 }
 
 function dragged(d) {
+    simulation.alpha(1);
+    simulation.restart();
 
     if (d3.select(this).node().nodeName == "svg") {
         var x = startX - (dragXStart - d3.event.x) / scale;
@@ -314,7 +337,7 @@ function mouseOutHandler() {
 function mouseOverHandler() {
     var metadata = d3.select(this).data()[0];
     var mLinks = graph.mLinks.filter(link => link.source.id == metadata.id);
- 
+
     node.selectAll("circle").attr("class", (d) => (mLinks.filter(link => link.target.id == d.id || link.id == link.source.id).length > 0) ? "show" : "");
 
 }
@@ -354,6 +377,10 @@ function isNodeExist(metadata) {
 
 function isNodeExistByName(pageName) {
     return (d3.select('[name=' + '"' + pageName + '"' + ']').size() > 0);
+}
+
+function isLeaf(metadata) {
+    return adjacency(metadata) == 0;
 }
 
 function addLink(metadataSrc, metadataDst) {
@@ -402,9 +429,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-        id: "a",
-        name: "a"
-    },
+            id: "a",
+            name: "a"
+        },
         b = {
             id: "b",
             name: "b"
