@@ -22,7 +22,7 @@ var zoom;
 var slider;
 var svg;
 var dezoomed;
-var linkIteration = 0.7; // between 0 and 1
+var linkIteration = 0.3; // between 0 and 1
 var linkStrength = 0.73;
 var linkDistance = 21;
 var velocityDecay = 0.51;
@@ -118,8 +118,8 @@ function init() {
 
 function initGraph() {
     simulation = d3.forceSimulation(graph.nodes)
-        .force("charge", d3.forceManyBody().strength(repulsion).distanceMax(distanceMax))
-        .force("link", d3.forceLink().distance(linkDistance))
+        .force("charge", d3.forceManyBody() .distanceMax(distanceMax))
+        .force("link", d3.forceLink().distance(linkDistance).iterations(linkIteration))
         .force('center', d3.forceCenter())
         .alphaDecay(alphaDecay)
 

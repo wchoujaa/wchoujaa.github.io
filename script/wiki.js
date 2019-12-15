@@ -83,8 +83,7 @@ function onSubmit(e) {
     var names = $('#test').val().split(',');
     if (names == "") return false;
     var articleLink = [];
-    var count = 0;
-    var intervalTime = 500;
+
     for (i = 0; i < names.length; i++) {
         var pageName = names[i];
         loadArticle(pageName);
@@ -96,19 +95,7 @@ function onSubmit(e) {
                 articleLink.push(nameList[j].page);
 
             }
-            var interval = setInterval(() => {
-                if (articleLink.length == count) {
-                    articleLink.forEach(link => {
-                        loadArticleLink(link);
-                    });
-                    clearInterval(interval);
-                } else {
-                    var link = articleLink[count];
-                    loadArticle(link);
-                }
-
-                count++;
-            }, intervalTime);
+            loadArticleInterval(articleLink);
         });
 
     }
@@ -117,6 +104,40 @@ function onSubmit(e) {
 
     return false;
 }
+
+function loadArticleInterval(articleLink) {
+    var count = 0;
+    var intervalTime = 500;
+    var interval = setInterval(() => {
+        if (articleLink.length == count) {
+            loadArticleLinkInterval(articleLink);
+            clearInterval(interval);
+        } else {
+            var link = articleLink[count];
+            loadArticle(link);
+        }
+
+        count++;
+    }, intervalTime);
+
+}
+
+function loadArticleLinkInterval(articleLink) {
+    var count = 0;
+    var intervalTime = 12;
+    var interval = setInterval(() => {
+        if (articleLink.length == count) {
+            clearInterval(interval);
+        } else {
+            var link = articleLink[count];
+            loadArticleLink(link);
+        }
+
+        count++;
+    }, intervalTime);
+}
+
+
 
 function displayNode(text, metadata) {
     var nodes = graph.nodes.slice();
