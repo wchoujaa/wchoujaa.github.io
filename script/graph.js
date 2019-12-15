@@ -22,7 +22,7 @@ var zoom;
 var slider;
 var svg;
 var dezoomed;
-var linkIteration = 0.3; // between 0 and 1
+var linkIteration = 0.1; // between 0 and 1
 var linkStrength = 0.73;
 var linkDistance = 21;
 var velocityDecay = 0.51;
@@ -33,6 +33,8 @@ var distanceMin = 0.5;
 var distanceMax = 1000;
 var dragXStart = 0;
 var dragYStart = 0;
+var gScaleX = 0;
+var gScaleY = 0;
 var alphaDecay = 0.007;
 var alphaTarget = 2;
 var alphaMin = 0.11;
@@ -51,13 +53,16 @@ var scale = 1;
 
 var holder;
 
+
+var inputZoom;
+var inputAngle;
 (function () {
     var ua = navigator.userAgent,
         iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -84,7 +89,8 @@ function init() {
     color = d3.scaleOrdinal(d3.schemeCategory10);
 
     gScale = svg.append("g");
-    gTranslate = gScale.append("g").attr("transform", "translate(" + startX + "," + startY + ")");
+    gTranslate = gScale.append("g")
+        .attr("transform", "translate(" + startX + "," + startY + ")");
     gAngle = gTranslate.append("g");
     holder = gAngle;
     svg.call(d3.zoom()
@@ -99,7 +105,8 @@ function init() {
         .scaleExtent([0.1, 10])
         .on("zoom", zoomed);
 
-    slider = d3.select(".zoom-slider > input")
+    // setup zoom slider
+    inputZoom = d3.select("#input-zoom")
         .datum({})
         .attr("type", "range")
         .attr("min", zoom.scaleExtent()[0])
@@ -108,17 +115,17 @@ function init() {
         .attr("value", 1)
         .on("input", slided);
 
-
-    d3.select("#nAngle").on("input", function () {
+    // setup angle slider
+    inputAngle = d3.select("#input-angle").on("input", function () {
         rotation = +this.value;
-        update(+this.value);
+        rotateGraph(+this.value);
     });
 }
 
 
 function initGraph() {
     simulation = d3.forceSimulation(graph.nodes)
-        .force("charge", d3.forceManyBody() .distanceMax(distanceMax))
+        .force("charge", d3.forceManyBody().distanceMax(distanceMax))
         .force("link", d3.forceLink().distance(linkDistance).iterations(linkIteration))
         .force('center', d3.forceCenter())
         .alphaDecay(alphaDecay)
@@ -136,7 +143,6 @@ function initGraph() {
             .on("tick", ticked); */
 
     gGraph = holder.append("g").attr("id", "graph");
-
     mLink = gGraph.append("g").attr("class", "mlinks").selectAll(".mlink");
     link = gGraph.append("g").attr("class", "links").selectAll(".link");
     node = gGraph.append("g").attr("class", "nodes").selectAll(".node");
@@ -151,13 +157,7 @@ function initGraph() {
 
 function restart(graph) {
 
-    mLink = mLink.data(graph.mLinks, function (d) {
-        return d.source.id + "-" + d.target.id;
-    });
 
-    mLink.exit().remove();
-
-    mLink = mLink.enter().append("line").merge(mLink);
 
     node = node.data(graph.nodes, function (d) {
         return d.id;
@@ -208,6 +208,16 @@ function restart(graph) {
 
     link = link.enter().append("line").merge(link);
 
+    // Apply the general update pattern to the meta-links.
+
+    mLink = mLink.data(graph.mLinks, function (d) {
+        return d.source.id + "-" + d.target.id;
+    });
+
+    mLink.exit().remove();
+
+    mLink = mLink.enter().append("line").merge(mLink);
+
     // Update and start the simulation.
     simulation.nodes(graph.nodes);
     simulation.force("link").links(graph.links);
@@ -215,22 +225,33 @@ function restart(graph) {
     simulation.restart();
 
     zoomGraph();
-    update(rotation);
+    rotateGraph();
 }
 
-function update(nAngle) {
+function rotateGraph() {
 
     // adjust the text on the range slider
-    d3.select("#nAngle-value").text(nAngle);
-    d3.select("#nAngle").property("value", nAngle);
-    node.selectAll("text").attr("transform", "  rotate(" + -rotation + ")")
-    // rotate the text
+    d3.select("#angle-value")
+        .text(rotation);
+    inputAngle
+        .property("value", rotation);
+    // rotate the graph
+    node.selectAll("text")
+        .attr("transform", "  rotate(" + -rotation + ")")
+    // rotate the graph
     gAngle
-        .attr("transform", "  rotate(" + nAngle + ")");
+        .attr("transform", "  rotate(" + rotation + ")");
 }
 
 function zoomGraph() {
 
+    // 100 * (1 - 1)/2
+    // 100 * (1 - 0.5)/2
+
+    //gScale.attr("transform", "scale(" + scale + ") ");
+    // adjust the text, get 2 decimal places, put it on the range slider
+    d3.select("#zoom-value")
+        .text((Math.round(scale * 100) / 100).toFixed(2));
     if (scale <= zoomTrshld2x) {
         node.selectAll("text")
             .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "hide");
@@ -241,6 +262,30 @@ function zoomGraph() {
         node.selectAll("text")
             .transition(500).attr("class", "");
     }
+}
+
+function zoomed() {
+
+    var value = d3.event.transform.k;
+    gScale.attr("transform", d3.event.transform); // updated for d3 v4
+
+    inputZoom.property("value", value);
+    zoomValue(value);
+
+}
+
+function slided(d) {
+    var value = d3.select(this).property("value");
+    gScale.attr("transform", "scale(" + value + ")");
+    zoomValue(value);
+}
+
+function zoomValue(value) {
+    scale = value;
+    inputZoom.text(scale);
+
+    zoomGraph();
+
 }
 
 function ticked() {
@@ -314,30 +359,7 @@ function dragended() {
     }
 }
 
-function zoomed() {
 
-    var value = d3.event.transform.k;
-    gScale.attr("transform", d3.event.transform);
-    slider.property("value", value);
-
-    zoomValue(value);
-
-}
-
-function slided(d) {
-    var value = d3.select(this).property("value");
-    var transform = gScale.attr("transform");
-
-    gScale.attr("transform", "scale(" + value + ")");
-
-    zoomValue(value);
-}
-
-function zoomValue(value) {
-    scale = value;
-    zoomGraph();
-
-}
 
 function clicked() {
 
@@ -362,7 +384,12 @@ function mouseOverHandler() {
     var metadata = d3.select(this).data()[0];
     var mLinks = graph.mLinks.filter(link => link.source.id == metadata.id);
 
-    node.selectAll("circle").attr("class", (d) => (mLinks.filter(link => link.target.id == d.id || link.id == link.source.id).length > 0) ? "show" : "");
+    node.selectAll("circle")
+        .attr("class", (d) => (mLinks.filter(link => link.target.id == d.id || d.id == link.source.id).length > 0) ? "show" : "");
+
+
+    mLink.selectAll("line")
+        .attr("class", (d) => (mLinks.filter(link => link.target.id == d.id || d.id == link.source.id).length > 0) ? "show" : "");
 
 }
 
@@ -453,9 +480,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-        id: "a",
-        name: "a"
-    },
+            id: "a",
+            name: "a"
+        },
         b = {
             id: "b",
             name: "b"

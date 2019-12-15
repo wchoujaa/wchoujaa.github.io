@@ -18,6 +18,13 @@ svg {
     stroke-width: 1.5;
 }
 
+#graph line .show{
+    stroke: rgb(90, 75, 228);
+
+    stroke-width: 2.5;
+
+}
+
 #graph .nodes circle {
     stroke: #fff;
     r: 3;

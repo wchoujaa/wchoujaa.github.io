@@ -9,7 +9,7 @@ var radialClusterType = "radial Cluster"
 var vizType = [graphType, radialClusterType];
 var typeIndex = 0;
 var type = vizType[typeIndex];
-
+var aticleQueue = [];
 var rootDictionary = {
     'en': {
         id: 13692155,
@@ -41,6 +41,7 @@ var rootDictionary = {
     }
 }
 var root;
+var articleInterval = 22;
 
 $(document).ready(function () {
     root = rootDictionary["en"];
@@ -56,14 +57,15 @@ $(document).ready(function () {
         typeIndex = (typeIndex + 1) % vizType.length;
         displayType();
         restartVisualisation();
-    })
-
-
+    });
 
     $('#branch').change(function () {
         maxLink = $('#branch').val();
     });
+
+    setInterval(articleQueueInterval, articleInterval);
 });
+
 
 function displayType() {
     type = vizType[typeIndex];
@@ -83,61 +85,47 @@ function onSubmit(e) {
     var names = $('#test').val().split(',');
     if (names == "") return false;
     var articleLink = [];
-
     for (i = 0; i < names.length; i++) {
         var pageName = names[i];
-        loadArticle(pageName);
+        aticleQueue.unshift(pageName);
         articleLink.push(pageName);
-
         process(pageName, maxLink).then(function (links) {
-            var nameList = links;
-            for (var j = 0; j < nameList.length; j++) {
-                articleLink.push(nameList[j].page);
+             
+            for (var j = 0; j < links.length; j++) {
+                var linkName = links[j].page;
 
+                aticleQueue.unshift(linkName);
+                articleLink.push(linkName);
             }
-            loadArticleInterval(articleLink);
+
+            setTimeout(() => {
+                console.log("time");
+                
+                var count = 0;
+                var interval = setInterval(() => {
+                    if (count == articleLink.length) {
+                        clearInterval(interval);
+                    }
+                    var link = articleLink[count];
+                    loadArticleLink(link);
+    
+                    count++;
+                }, articleInterval);
+            }, 3000);
+
         });
-
     }
-
-
 
     return false;
 }
+ 
 
-function loadArticleInterval(articleLink) {
-    var count = 0;
-    var intervalTime = 500;
-    var interval = setInterval(() => {
-        if (articleLink.length == count) {
-            loadArticleLinkInterval(articleLink);
-            clearInterval(interval);
-        } else {
-            var link = articleLink[count];
-            loadArticle(link);
-        }
-
-        count++;
-    }, intervalTime);
-
+function articleQueueInterval() {
+    var link = aticleQueue.pop();
+    if (aticleQueue.length != 0) {
+        loadArticle(link);
+    }
 }
-
-function loadArticleLinkInterval(articleLink) {
-    var count = 0;
-    var intervalTime = 12;
-    var interval = setInterval(() => {
-        if (articleLink.length == count) {
-            clearInterval(interval);
-        } else {
-            var link = articleLink[count];
-            loadArticleLink(link);
-        }
-
-        count++;
-    }, intervalTime);
-}
-
-
 
 function displayNode(text, metadata) {
     var nodes = graph.nodes.slice();
@@ -183,7 +171,7 @@ function displayNode(text, metadata) {
 }
 
 async function loadArticleLink(title) {
-
+     
     if (!isNodeExistByName(title)) return;
 
     var metadata = metadataByName(title);
@@ -220,12 +208,12 @@ async function loadArticle(title, previousMetadata) {
     var metadata;
     await $.getJSON(
         "https://en.wikipedia.org/w/api.php?callback=?", {
-        titles: title,
-        action: "query",
-        prop: "revisions",
-        rvprop: "content",
-        format: "json"
-    },
+            titles: title,
+            action: "query",
+            prop: "revisions",
+            rvprop: "content",
+            format: "json"
+        },
         function (data) {
             metadata = extractField(data, previousMetadata)
         }
