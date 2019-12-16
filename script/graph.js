@@ -380,7 +380,7 @@ function clicked() {
 
 function mouseOutHandler() {
     var metadata = d3.select(this).data()[0];
-    if (!metadata.selected) {
+    if (!selected) {
         deselectNeighbours();
     }
 }
