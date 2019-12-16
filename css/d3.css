@@ -18,10 +18,9 @@ svg {
     stroke-width: 1.5;
 }
 
-#graph line .show{
-    stroke: rgb(90, 75, 228);
-
-    stroke-width: 2.5;
+#graph line.highlight{
+    stroke: rgb(71, 51, 253);
+    stroke-width: 5px;
 
 }
 
@@ -30,12 +29,19 @@ svg {
     r: 3;
 }
 
-#graph .nodes circle.show {
-    r: 12;
+#graph .nodes circle.highlight {
+    stroke: rgb(71, 51, 253);
+
+    r: 5;
+}
+
+#graph .nodes text.highlight{
+    font-size: 18px;
 }
 
 #graph .nodes {
     font-size: 5px;
+    color: black;
 }
 
 #graph .nodes .hide {

@@ -99,8 +99,7 @@ function onSubmit(e) {
             }
 
             setTimeout(() => {
-                console.log("time");
-                
+                 
                 var count = 0;
                 var interval = setInterval(() => {
                     if (count == articleLink.length) {
@@ -129,41 +128,31 @@ function articleQueueInterval() {
 
 function displayNode(text, metadata) {
     var nodes = graph.nodes.slice();
-    var links = graph.links.slice();
-
+ 
     var atExistingNode = isNodeExist(metadata);
 
     addToScroll(3000, metadata.name + (atExistingNode ? " (&middot;)" : ""));
 
     if (!atExistingNode) {
 
-        nodes.push(metadata);
-
-        links.push({
-            "source": metadata,
-            "target": root
-        })
+        addNode(metadata);
+        addLink(metadata, root);
+ 
     }
 
     if (metadata.previous != null) {
 
-        links = links.filter(link => !(link.source.id == metadata.previous.id && link.target.id == root.id));
-        links = links.filter(link => !(link.target.id == metadata.previous.id && link.source.id == root.id));
-
+        removeLink(metadata.previous, root);
+        
         if (atExistingNode) {
             var previous = metadata.previous;
             metadata = d3.select('#name' + metadata.id).data()[0];
             metadata.previous = previous;
         }
 
-        links.push({
-            "source": metadata,
-            "target": metadata.previous
-        })
+        addLink(metadata, metadata.previous);
     }
-
-    graph.nodes = nodes;
-    graph.links = links;
+ 
 
     restartVisualisation();
 
@@ -186,10 +175,8 @@ async function loadArticleLink(title) {
             var linkName = nameList[j].page;
             if (isNodeExistByName(linkName)) {
                 var metadataLink = metadataByName(linkName);
-                graph.mLinks.push({
-                    "source": metadata,
-                    "target": metadataLink
-                });
+
+                addMlink(metadata, metadataLink);
                 restartVisualisation();
             }
         }

@@ -70,9 +70,6 @@ var inputAngle;
     animate = !(iStuff || !nativeCanvasSupport);
 })();
 
-
-
-
 function init() {
     var rect = d3.select("svg").node().getBoundingClientRect();
     svg = d3.select("svg");
@@ -168,7 +165,6 @@ function restart(graph) {
     });
 
     var nodeEnter = node.enter().append("g")
-        .attr("class", "nodes")
         .attr("id", (d) =>
             "name" + d.id
         ).attr("name", (d) => d.name);
@@ -252,16 +248,28 @@ function zoomGraph() {
     // adjust the text, get 2 decimal places, put it on the range slider
     d3.select("#zoom-value")
         .text((Math.round(scale * 100) / 100).toFixed(2));
-    if (scale <= zoomTrshld2x) {
-        node.selectAll("text")
-            .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "hide");
-    } else if (scale <= zoomTrshld) {
-        node.selectAll("text")
-            .transition(500).attr("class", (d) => (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "hide");
-    } else {
-        node.selectAll("text")
-            .transition(500).attr("class", "");
-    }
+
+    node.selectAll("text")
+        .attr("class", function (d) {
+            var className = d3.select('#name' + d.id).select("text").attr("class") || "";
+
+        
+                    
+            
+             if (scale <= zoomTrshld2x && (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id)) {
+                className = "dezoom2x";
+            }
+            else if (scale <= zoomTrshld && (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id)) {
+                className = "dezoom";
+            }
+            else if (scale <= zoomTrshld) {
+                className = "hide";
+            }
+            
+
+            return className;
+        });
+
 }
 
 function zoomed() {
@@ -359,38 +367,53 @@ function dragended() {
     }
 }
 
-
-
 function clicked() {
 
-    d3.select(this).selectAll('.nodes > rect').attr("stroke-width", strokeWidth + 2).attr("stroke", "black");
     var metadata = d3.select(this).data()[0];
     metadata.selected = !metadata.selected;
     selected = metadata.selected;
     // open link
-
+    higlightNeighbours(metadata);
     d3.event.stopPropagation();
 
 }
 
 function mouseOutHandler() {
-
-
     var metadata = d3.select(this).data()[0];
-    node.selectAll("circle").attr("class", "");
+    if (!metadata.selected) {
+        deselectNeighbours();
+    }
 }
 
 function mouseOverHandler() {
     var metadata = d3.select(this).data()[0];
+    higlightNeighbours(metadata);
+}
+
+function higlightNeighbours(metadata) {
     var mLinks = graph.mLinks.filter(link => link.source.id == metadata.id);
 
     node.selectAll("circle")
-        .attr("class", (d) => (mLinks.filter(link => link.target.id == d.id || d.id == link.source.id).length > 0) ? "show" : "");
+        .attr("class", (d) => {
+            return (mLinks.filter(link => link.target.id == d.id || d.id == link.source.id).length > 0) ? "highlight" : "";
+        });
 
+    mLink
+        .attr("class", (d) => (mLinks.filter(link => d.source.id == link.source.id).length > 0) ? "highlight" : "");
 
-    mLink.selectAll("line")
-        .attr("class", (d) => (mLinks.filter(link => link.target.id == d.id || d.id == link.source.id).length > 0) ? "show" : "");
+    node.selectAll("text")
+        .attr("class", (d) => {
+            return (mLinks.filter(link => link.target.id == d.id || d.id == link.source.id).length > 0) ? "highlight" : "";
+        });
 
+    zoomGraph();
+}
+
+function deselectNeighbours() {
+    node.selectAll("circle").attr("class", "");
+    node.selectAll("text").attr("class", "")
+    mLink.attr("class", "");
+    zoomGraph();
 }
 
 function getLinks(metadata) {
@@ -434,13 +457,18 @@ function isLeaf(metadata) {
     return adjacency(metadata) == 0;
 }
 
+
+function addNode(metadata) {
+    graph.nodes.push(metadata);
+}
+
 function addLink(metadataSrc, metadataDst) {
     var contain = graph.links.filter(link => link.source.id == metadataSrc.id && link.target.id == metadataDst.id);
 
     if (contain.length == 0) {
         graph.links.push({
-            metadataSrc,
-            metadataDst
+            "source": metadataSrc,
+            "target": metadataDst
         });
     }
 
@@ -453,13 +481,15 @@ function addMlink(metadataSrc, metadataDst) {
 
     if (contain.length == 0) {
         graph.mLinks.push({
-            metadataSrc,
-            metadataDst
+            "source": metadataSrc,
+            "target": metadataDst
         });
     }
-
     restart(graph);
+}
 
+function removeLink(source, destination) {
+    graph.links = graph.links.filter(link => !(link.source.id == source.id && link.target.id == destination.id));
 }
 
 function metadataByName(pageName) {
