@@ -28,7 +28,8 @@ var linkDistance = 21;
 var velocityDecay = 0.51;
 var repulsion = -37;
 var maxRepulsion = -1.1;
-var gravity = 0.003;
+var gravityX = 0.003;
+var gravityY = 0.01;
 var distanceMin = 0.5;
 var distanceMax = 1000;
 var dragXStart = 0;
@@ -36,7 +37,7 @@ var dragYStart = 0;
 var gScaleX = 0;
 var gScaleY = 0;
 var alphaDecay = 0.007;
-var alphaTarget = 2;
+var alphaTarget = 1;
 var alphaMin = 0.11;
 var r = 5.5;
 var collideStrength = 0.3;
@@ -62,7 +63,7 @@ var inputAngle;
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -124,7 +125,8 @@ function initGraph() {
     simulation = d3.forceSimulation(graph.nodes)
         .force("charge", d3.forceManyBody().distanceMax(distanceMax))
         .force("link", d3.forceLink().distance(linkDistance).iterations(linkIteration))
-        .force('center', d3.forceCenter())
+        .force('x', d3.forceX().strength(gravityX))
+        .force('y', d3.forceY().strength(gravityY))
         .alphaDecay(alphaDecay)
 
         .on("tick", ticked);
@@ -251,21 +253,15 @@ function zoomGraph() {
 
     node.selectAll("text")
         .attr("class", function (d) {
-            var className = d3.select('#name' + d.id).select("text").attr("class") || "";
-
-        
-                    
-            
-             if (scale <= zoomTrshld2x && (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id)) {
-                className = "dezoom2x";
-            }
-            else if (scale <= zoomTrshld && (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id)) {
-                className = "dezoom";
+            var className = "";
+            if (scale <= zoomTrshld2x) {
+                className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "hide";
             }
             else if (scale <= zoomTrshld) {
-                className = "hide";
+                className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "hide";
+            } else {
+                className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "";
             }
-            
 
             return className;
         });
@@ -373,7 +369,7 @@ function clicked() {
     metadata.selected = !metadata.selected;
     selected = metadata.selected;
     // open link
-    higlightNeighbours(metadata);
+    //higlightNeighbours(metadata);
     d3.event.stopPropagation();
 
 }
@@ -387,7 +383,7 @@ function mouseOutHandler() {
 
 function mouseOverHandler() {
     var metadata = d3.select(this).data()[0];
-    higlightNeighbours(metadata);
+    //higlightNeighbours(metadata);
 }
 
 function higlightNeighbours(metadata) {
@@ -510,9 +506,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-            id: "a",
-            name: "a"
-        },
+        id: "a",
+        name: "a"
+    },
         b = {
             id: "b",
             name: "b"

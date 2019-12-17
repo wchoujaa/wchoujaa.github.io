@@ -41,7 +41,8 @@ var rootDictionary = {
     }
 }
 var root;
-var articleInterval = 22;
+var articleInterval = 21;
+var articleLinkIntervalfloat = 1001;
 
 $(document).ready(function () {
     root = rootDictionary["en"];
@@ -99,17 +100,8 @@ function onSubmit(e) {
             }
 
             setTimeout(() => {
-                 
-                var count = 0;
-                var interval = setInterval(() => {
-                    if (count == articleLink.length) {
-                        clearInterval(interval);
-                    }
-                    var link = articleLink[count];
-                    loadArticleLink(link);
-    
-                    count++;
-                }, articleInterval);
+                 articleLinkInterval(articleLink);
+
             }, 3000);
 
         });
@@ -125,6 +117,21 @@ function articleQueueInterval() {
         loadArticle(link);
     }
 }
+
+function articleLinkInterval(articleLink) {
+    var count = 0;
+    var interval = setInterval(() => {
+        if (count == articleLink.length) {
+            clearInterval(interval);
+        }
+        var link = articleLink[count];
+        loadArticleLink(link);
+
+        count++;
+    }, articleLinkIntervalfloat);
+}
+
+
 
 function displayNode(text, metadata) {
     var nodes = graph.nodes.slice();
