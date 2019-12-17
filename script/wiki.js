@@ -134,8 +134,7 @@ function articleLinkInterval(articleLink) {
 
 
 function displayNode(text, metadata) {
-    var nodes = graph.nodes.slice();
- 
+  
     var atExistingNode = isNodeExist(metadata);
 
     addToScroll(3000, metadata.name + (atExistingNode ? " (&middot;)" : ""));
@@ -150,7 +149,7 @@ function displayNode(text, metadata) {
     if (metadata.previous != null) {
 
         removeLink(metadata.previous, root);
-        
+
         if (atExistingNode) {
             var previous = metadata.previous;
             metadata = d3.select('#name' + metadata.id).data()[0];
@@ -161,7 +160,7 @@ function displayNode(text, metadata) {
     }
  
 
-    restartVisualisation();
+    restartVisualisation(true);
 
     return atExistingNode;
 }
@@ -182,7 +181,6 @@ async function loadArticleLink(title) {
             var linkName = nameList[j].page;
             if (isNodeExistByName(linkName)) {
                 var metadataLink = metadataByName(linkName);
-
                 addMlink(metadata, metadataLink);
                 restartVisualisation();
             }
@@ -190,11 +188,11 @@ async function loadArticleLink(title) {
     });
 }
 
-function restartVisualisation() {
+function restartVisualisation(resimulate) {
     if (type == graphType) {
-        restart(graph);
+        restart(resimulate);
     } else if (type == radialClusterType) {
-        restartRadial(graph);
+        restartRadial();
     }
 }
 

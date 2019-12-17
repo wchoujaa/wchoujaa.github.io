@@ -36,8 +36,8 @@ var dragXStart = 0;
 var dragYStart = 0;
 var gScaleX = 0;
 var gScaleY = 0;
-var alphaDecay = 0.007;
-var alphaTarget = 1;
+var alphaDecay = 0.009;
+var alphaTarget = 1.5;
 var alphaMin = 0.11;
 var r = 5.5;
 var collideStrength = 0.3;
@@ -124,7 +124,7 @@ function init() {
 function initGraph() {
     simulation = d3.forceSimulation(graph.nodes)
         .force("charge", d3.forceManyBody().distanceMax(distanceMax))
-        .force("link", d3.forceLink().distance(linkDistance).iterations(linkIteration))
+        .force("link", d3.forceLink().iterations(linkIteration))
         .force('x', d3.forceX().strength(gravityX))
         .force('y', d3.forceY().strength(gravityY))
         .alphaDecay(alphaDecay)
@@ -148,13 +148,23 @@ function initGraph() {
 
 
 
-    restart(graph);
+    restart(true);
     //test();
 }
 
 
+var menu = [
+    {
+        title: 'Remove Node',
+        action: function (elm, d, i) {
+            recurseDelete(d);
 
-function restart(graph) {
+            restart();
+        }
+    }
+];
+
+function restart(resimulate) {
 
 
 
@@ -169,7 +179,8 @@ function restart(graph) {
     var nodeEnter = node.enter().append("g")
         .attr("id", (d) =>
             "name" + d.id
-        ).attr("name", (d) => d.name);
+        ).attr("name", (d) => d.name)
+        .on('contextmenu', d3.contextMenu(menu));
 
     nodeEnter
         .on('mouseover', mouseOverHandler)
@@ -219,8 +230,12 @@ function restart(graph) {
     // Update and start the simulation.
     simulation.nodes(graph.nodes);
     simulation.force("link").links(graph.links);
-    simulation.alpha(alphaTarget);
-    simulation.restart();
+
+    if(resimulate == true){
+        simulation.alpha(alphaTarget);
+        simulation.restart();
+    }
+
 
     zoomGraph();
     rotateGraph();
@@ -482,6 +497,28 @@ function addMlink(metadataSrc, metadataDst) {
         });
     }
     restart(graph);
+}
+
+function recurseDelete(metadata) {
+
+    graph.links.forEach(link => {
+        if (metadata.id == link.source.id) {
+            var metadataChild = d3.select('#name' + link.target.id).data()[0];
+ 
+            recurseDelete(metadataChild);
+                
+        }
+    });
+
+    removeNode(metadata);
+
+}
+
+function removeNode(metadata) {
+    graph.nodes = graph.nodes.filter(node => node.id != metadata.id);
+    graph.links = graph.links.filter(link => (link.source.id != metadata.id && link.target.id != metadata.id));
+    graph.mLinks = graph.mLinks.filter(link => (link.source.id != metadata.id && link.target.id != metadata.id));
+
 }
 
 function removeLink(source, destination) {

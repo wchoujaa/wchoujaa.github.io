@@ -14,7 +14,7 @@ svg {
 }
 
 #graph .mlinks {
-    stroke: #eee;
+    stroke: rgba(150, 149, 149, 0.06);
     stroke-width: 1.5;
 }
 

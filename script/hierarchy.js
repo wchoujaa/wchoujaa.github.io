@@ -23,7 +23,7 @@ function initHierarchy() {
 }
 
 var test2;
-function restartRadial(graph) {
+function restartRadial() {
 
     var root = toHierarchy(graph);
 
@@ -84,7 +84,6 @@ function recurse(current) {
     });
 
     if (current.children.length > 0) {
-
         current.children.forEach(child => {
             recurse(child);
         });
@@ -92,6 +91,7 @@ function recurse(current) {
 
 }
 var test;
+
 function toHierarchy(graph) {
 
     var hierarchyRoot = { id: root.id, name: root.name, children: [] }
