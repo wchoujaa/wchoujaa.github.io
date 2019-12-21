@@ -10,6 +10,7 @@ var vizType = [graphType, radialClusterType];
 var typeIndex = 0;
 var type = vizType[typeIndex];
 var aticleQueue = [];
+
 var rootDictionary = {
     'en': {
         id: 13692155,
