@@ -529,6 +529,12 @@ function metadataByName(pageName) {
     return d3.select('[name=' + '"' + pageName + '"' + "]").data()[0];
 }
 
+function clearGraph() {
+    graph.links = [];
+    graph.nodes = [];
+    graph.mLinks = [];
+}
+
 function dblclick(d) {
     var value = d3.select(this).classed("fixed")
     d3.select(this).classed("fixed", !value);
