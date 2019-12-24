@@ -1,12 +1,12 @@
 var see;
 var doct;
 var ls2;
-async function process(article, percent) {
+async function process(article, langage, percent) {
 
   //get the wikipedia plaintext with wtf_wikipedia
   //let text =  await wtf.fetch(article).then(doc=> doc.plaintext());
  
-  let doc = await wtf.fetch(article);
+  let doc = await wtf.fetch(article, langage);
   doct = doc;
   let allLinks = doc.links();
   //get all the nouns from the text

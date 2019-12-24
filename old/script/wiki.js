@@ -16,7 +16,7 @@ $(document).ready(function () {
    var parser = function () {
       console.log(maxLink);
       
-      var names = $('#test').val().split(',');
+      var names = $('#articleName').val().split(',');
       
       for (i = 0; i < names.length; i++) {
          console.log(names[i].page);
@@ -90,6 +90,7 @@ $(document).ready(function () {
    });
 
    rgraphic.loadJSON(root[lang]);
+   
    $(window).resize();
 
    // excanvas work-around...

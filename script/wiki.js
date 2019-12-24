@@ -44,15 +44,16 @@ var rootDictionary = {
 var root;
 var articleInterval = 21;
 var articleLinkIntervalfloat = 1001;
-
+var lang;
 $(document).ready(function () {
-    root = rootDictionary["en"];
+    lang = "fr"
+    loadRoot(rootDictionary[lang]);
 
-    graph.nodes.push(root);
     init();
     initGraph();
     initHierarchy();
     displayType();
+    
     $("#submit").click(onSubmit);
     $('#title').submit(onSubmit);
     $("#change").click(function () {
@@ -65,9 +66,21 @@ $(document).ready(function () {
         maxLink = $('#branch').val();
     });
 
+    $('#lang').change(function () {
+        clearGraph();
+        $('#articleName').val("");
+        lang = $('#lang').val();
+        loadRoot(rootDictionary[lang])
+        restartVisualisation();
+     });
+
     setInterval(articleQueueInterval, articleInterval);
 });
 
+function loadRoot(node) {
+    root = node;
+    graph.nodes.push(node);
+}
 
 function displayType() {
     type = vizType[typeIndex];
@@ -84,14 +97,14 @@ function displayType() {
 function onSubmit(e) {
     e.preventDefault();
 
-    var names = $('#test').val().split(',');
+    var names = $('#articleName').val().split(',');
     if (names == "") return false;
     var articleLink = [];
     for (i = 0; i < names.length; i++) {
         var pageName = names[i];
         aticleQueue.unshift(pageName);
         articleLink.push(pageName);
-        process(pageName, maxLink).then(function (links) {
+        process(pageName, lang, maxLink).then(function (links) {
              
             for (var j = 0; j < links.length; j++) {
                 var linkName = links[j].page;
@@ -173,7 +186,7 @@ async function loadArticleLink(title) {
     var metadata = metadataByName(title);
 
 
-    process(title, "max").then(function (val) {
+    process(title, lang, "max").then(function (val) {
         if (!metadata) return; // if deleted during async call
         var nameList = val;
 
@@ -198,9 +211,10 @@ function restartVisualisation(resimulate) {
 }
 
 async function loadArticle(title, previousMetadata) {
+    
     var metadata;
     await $.getJSON(
-        "https://en.wikipedia.org/w/api.php?callback=?", {
+        "https://" + lang + ".wikipedia.org/w/api.php?callback=?", {
             titles: title,
             action: "query",
             prop: "revisions",
