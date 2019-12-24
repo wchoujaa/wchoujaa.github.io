@@ -104,6 +104,7 @@ function onSubmit(e) {
         var pageName = names[i];
         aticleQueue.unshift(pageName);
         articleLink.push(pageName);
+        
         process(pageName, lang, maxLink).then(function (links) {
              
             for (var j = 0; j < links.length; j++) {
@@ -127,7 +128,7 @@ function onSubmit(e) {
 
 function articleQueueInterval() {
     var link = aticleQueue.pop();
-    if (aticleQueue.length != 0) {
+    if (link) {
         loadArticle(link);
     }
 }
