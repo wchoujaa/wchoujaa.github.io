@@ -5,13 +5,7 @@ function initChildParent() {
     var element = document.querySelector('#listvis-container')
 
     // And pass it to panzoom
-    panzoom(element, {
-        beforeWheel: function (e) {
-            // allow wheel-zoom only if altKey is down. Otherwise - ignore
-            var shouldIgnore = !e.altKey;
-            return shouldIgnore;
-        }
-    });
+ 
      restartChildParent();
 }
 

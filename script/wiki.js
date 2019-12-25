@@ -53,8 +53,8 @@ var dictionary = {};
 var articleLink = [];
 
 $(document).ready(function () {
-    sliderController = slider('#slider');
-    sliderController.gotoSlide('#infovis');
+    new Glide('.glide').mount()
+
 
     lang = "fr";
     loadRoot(rootDictionary[lang]);
