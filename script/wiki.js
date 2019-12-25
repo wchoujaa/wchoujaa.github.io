@@ -13,7 +13,7 @@ var type = vizType[typeIndex];
 var aticleQueue = [];
 var root;
 var articleInterval = 21;
-var articleLinkIntervalfloat = 1001;
+var articleLinkIntervalfloat = 501;
 var lang;
 var sliderController;
 var rootDictionary = {
@@ -46,14 +46,17 @@ var rootDictionary = {
         name: "&#1060;&#1080;&#1083;&#1086;&#1089;&#1086;&#1092;&#1080;&#1103;"
     }
 };
-
+var searching =false;
+// contain definition of articles
 var dictionary = {};
+// contain all article ?
+var articleLink = [];
 
 $(document).ready(function () {
     sliderController = slider('#slider');
     sliderController.gotoSlide('#infovis');
 
-    lang = "fr"
+    lang = "fr";
     loadRoot(rootDictionary[lang]);
 
     init();
@@ -79,6 +82,14 @@ $(document).ready(function () {
         lang = $('#lang').val();
         loadRoot(rootDictionary[lang])
         restartVisualisation();
+    });
+
+    $('#image').click(function () {
+        if(searching) return;
+        // on image click load metalink
+        articleLinkInterval(articleLink);
+        restartChildParent();
+
     });
 
     setInterval(articleQueueInterval, articleInterval);
@@ -112,11 +123,9 @@ function onSubmit(e) {
 
     var names = $('#articleName').val().split(',');
     if (names == "") return false;
-    var articleLink = [];
     for (i = 0; i < names.length; i++) {
         var pageName = names[i];
         aticleQueue.unshift(pageName);
-        articleLink.push(pageName);
 
         process(pageName, lang, maxLink).then(function (links) {
 
@@ -124,14 +133,7 @@ function onSubmit(e) {
                 var linkName = links[j].page;
 
                 aticleQueue.unshift(linkName);
-                articleLink.push(linkName);
             }
-
-            setTimeout(() => {
-                articleLinkInterval(articleLink);
-                restartChildParent();
-            }, 3000);
-
         });
     }
 
@@ -146,26 +148,28 @@ function articleQueueInterval() {
     }
 }
 
-function articleLinkInterval(articleLink) {
+function articleLinkInterval(articles) {
+    searching = true;
     var count = 0;
     var interval = setInterval(() => {
-        if (count == articleLink.length) {
+        if (count == articles.length) {
             clearInterval(interval);
-            updateDictionay(articleLink);
         }
-        var link = articleLink[count];
-        loadArticleLink(link);
+
+        var article = articles[count];
+        loadArticleLink(article);
+        restartChildParent();
 
         count++;
     }, articleLinkIntervalfloat);
 }
 
 function updateDictionay(articleList) {
- 
+
     articleList.forEach(article => {
         var metadata = metadataByName(article);
         if (metadata && shouldShow(metadata)) {
-            processSummary(metadata,lang);
+            processSummary(metadata, lang);
         }
     });
     restartChildParent();
@@ -174,7 +178,7 @@ function updateDictionay(articleList) {
 
 
 function displayNode(text, metadata) {
-
+    articleLink.push(metadata);
     var atExistingNode = isNodeExist(metadata);
 
     addToScroll(3000, metadata.name + (atExistingNode ? " (&middot;)" : ""));
@@ -205,14 +209,13 @@ function displayNode(text, metadata) {
     return atExistingNode;
 }
 
-async function loadArticleLink(title) {
+async function loadArticleLink(metadata) {
 
-    if (!isNodeExistByName(title)) return;
-
-    var metadata = metadataByName(title);
+    if (!isNodeExist(metadata)) return;
 
 
-    process(title, lang, "max").then(function (val) {
+
+    process(metadata.name, lang, 5).then(function (val) {
         if (!metadata) return; // if deleted during async call
         var nameList = val;
 
@@ -222,7 +225,7 @@ async function loadArticleLink(title) {
             if (isNodeExistByName(linkName)) {
                 var metadataLink = metadataByName(linkName);
                 addMlink(metadata, metadataLink);
-                restartVisualisation();
+                restartVisualisation(false);
             }
         }
     });
@@ -243,12 +246,12 @@ async function loadArticle(title, previousMetadata) {
     var metadata;
     await $.getJSON(
         "https://" + lang + ".wikipedia.org/w/api.php?callback=?", {
-        titles: title,
-        action: "query",
-        prop: "revisions",
-        rvprop: "content",
-        format: "json"
-    },
+            titles: title,
+            action: "query",
+            prop: "revisions",
+            rvprop: "content",
+            format: "json"
+        },
         function (data) {
             metadata = extractField(data, previousMetadata)
         }

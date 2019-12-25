@@ -21,8 +21,9 @@ function displayList(element, parent) {
     if (element.show) {
         var current = parent.append("li");
         var a = current.append("a").text(element.name);
+        
         if(dictionary[element.id]){
-            var span = current.append("span").text(dictionary[element.name]);
+            var span = current.append("span").text(dictionary[element.id]);
             a.on("mouseover", span.attr("class", "active"));
             a.on("mouseout", span.attr("class", ""))
         }

@@ -9,13 +9,13 @@ h1 {
 .nav {
     text-align: left;
     margin: 61px auto;
-    padding-top: 51px;
-    ;
+    padding-top: 121px;
     left: 60px;
     width: 455px;
     min-height: auto;
     background: white;
-    white-space: nowrap
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 ul.list, ul.list ul {

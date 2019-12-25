@@ -6,6 +6,9 @@ async function process(article, langage, percent) {
   //get the wikipedia plaintext with wtf_wikipedia
   //let text =  await wtf.fetch(article).then(doc=> doc.plaintext());
   let doc = await wtf.fetch(article, langage);
+  var metadata = metadataByName(article);
+  if(metadata && doc.section(0))
+    dictionary[metadata.id] = doc.section(0).data.paragraphs[0].sentences()[0].data.text;
 
   doct = doc;
 
@@ -30,7 +33,6 @@ async function process(article, langage, percent) {
 }
 
 async function processSummary(article, langage) {
-  console.log(article);
 
   let doc = await wtf.fetch(article.name, langage);  
   dictionary[article.id] = doc.section(0).data.paragraphs[0].sentences()[0].data.text;
