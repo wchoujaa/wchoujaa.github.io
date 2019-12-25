@@ -2,12 +2,14 @@ var see;
 var doct;
 var ls2;
 async function process(article, langage, percent) {
-
+  var ls = []
   //get the wikipedia plaintext with wtf_wikipedia
   //let text =  await wtf.fetch(article).then(doc=> doc.plaintext());
   let doc = await wtf.fetch(article, langage);
+  if (!doc)
+    return ls;
   var metadata = metadataByName(article);
-  if(metadata && doc.section(0))
+  if (metadata && doc.section(0) && doc.section(0).data.paragraphs[0]  && doc.section(0).data.paragraphs[0].sentences()[0])
     dictionary[metadata.id] = doc.section(0).data.paragraphs[0].sentences()[0].data.text;
 
   doct = doc;
@@ -17,7 +19,7 @@ async function process(article, langage, percent) {
   //let nouns = nlp(text).nouns()
   //sort them by frequency
   //var ls = nouns.out('topk').slice(0,percent);
-  var ls = doc.links();//doc.section(0).links();
+  ls = doc.links(); //doc.section(0).links();
   var seeAlsoSection = doc.sections('See also');
   var secondSection = doc.sections(1);
 
@@ -34,7 +36,7 @@ async function process(article, langage, percent) {
 
 async function processSummary(article, langage) {
 
-  let doc = await wtf.fetch(article.name, langage);  
+  let doc = await wtf.fetch(article.name, langage);
   dictionary[article.id] = doc.section(0).data.paragraphs[0].sentences()[0].data.text;
 
 }

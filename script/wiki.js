@@ -13,7 +13,7 @@ var type = vizType[typeIndex];
 var aticleQueue = [];
 var root;
 var articleInterval = 21;
-var articleLinkIntervalfloat = 501;
+var articleLinkIntervalfloat = 101;
 var lang;
 var sliderController;
 var rootDictionary = {
