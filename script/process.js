@@ -30,8 +30,9 @@ async function process(article, langage, percent) {
 }
 
 async function processSummary(article, langage) {
-  let doc = await wtf.fetch(article, langage);
+  console.log(article);
 
-  dictionary[article] = doc.section(0).data.paragraphs[0].sentences()[0].data.text;
+  let doc = await wtf.fetch(article.name, langage);  
+  dictionary[article.id] = doc.section(0).data.paragraphs[0].sentences()[0].data.text;
 
 }

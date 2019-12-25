@@ -524,6 +524,15 @@ function removeLink(source, destination) {
     graph.links = graph.links.filter(link => !(link.source.id == source.id && link.target.id == destination.id));
 }
 
+function getChildren(metadata) {
+    return graph.links.filter(link => link.source.id == metadata.id);
+
+}
+
+function getMetaLink(metadata) {
+    return graph.mLinks.filter(link => link.id == metadata.id);
+}
+
 
 function recurse(current, mlinks) {
 
@@ -554,33 +563,22 @@ function recurse(current, mlinks) {
             recurse(child);
         });
     }
-    
+
     // should be displayed ? 
     // criteria:
     // adjacency > 2
     // mlinks > 2
     // or leaf
-    var result = graph.mLinks.filter(link => link.id == current.id);
-    console.log(current , root);
-    
-    if(current.id == root.id){
-        current.show = true;
 
-    }
-    else if (current.children.length == 0) {
-        current.show = true;
-    }
-    else if (adjacency(current) >= 2) {
-        current.show = true;
-    }
-    
-    else if (result.length > 2) {
+    if (shouldShow(current)) {
         current.show = true;
     } else {
         current.show = false
     }
+}
 
-
+function shouldShow(metadata) {
+    return getChildren(metadata) == 0 || adjacency(metadata) >= 2 || getMetaLink(metadata) >= 2 || metadata.id == root.id;
 }
 
 function toHierarchy(mlinks) {
@@ -596,6 +594,11 @@ function toHierarchy(mlinks) {
 function metadataByName(pageName) {
     return d3.select('[name=' + '"' + pageName + '"' + "]").data()[0];
 }
+
+function metadataByID(id) {
+    return d3.select('#name' + id).data()[0];
+}
+
 
 function clearGraph() {
     graph.links = [];

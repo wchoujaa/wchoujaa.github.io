@@ -7,7 +7,7 @@ var graph = {
 var graphType = "graph";
 var radialClusterType = "radial Cluster"
 var childParent = "childParent";
-var vizType = [graphType , childParent];
+var vizType = [graphType, childParent];
 var typeIndex = 0;
 var type = vizType[typeIndex];
 var aticleQueue = [];
@@ -60,7 +60,7 @@ $(document).ready(function () {
     initGraph();
     initChildParent();
     displayType();
-    
+
     $("#submit").click(onSubmit);
     $('#title').submit(onSubmit);
     $("#change").click(function () {
@@ -79,7 +79,7 @@ $(document).ready(function () {
         lang = $('#lang').val();
         loadRoot(rootDictionary[lang])
         restartVisualisation();
-     });
+    });
 
     setInterval(articleQueueInterval, articleInterval);
 });
@@ -91,7 +91,7 @@ function loadRoot(node) {
 
 function displayType() {
     type = vizType[typeIndex];
-    
+
     if (type == graphType) {
         d3.select("#graph").attr("class", "");
         d3.select("#radial").attr("class", "hidden");
@@ -100,7 +100,7 @@ function displayType() {
         d3.select("#graph").attr("class", "hidden");
         d3.select("#childParent").attr("class", "hidden");
         d3.select("#radial").attr("class", "");
-    } else if( type == childParent){
+    } else if (type == childParent) {
         d3.select("#graph").attr("class", "hidden");
         d3.select("#radial").attr("class", "hidden");
         d3.select("#childParent").attr("class", "");
@@ -117,9 +117,9 @@ function onSubmit(e) {
         var pageName = names[i];
         aticleQueue.unshift(pageName);
         articleLink.push(pageName);
-        
+
         process(pageName, lang, maxLink).then(function (links) {
-             
+
             for (var j = 0; j < links.length; j++) {
                 var linkName = links[j].page;
 
@@ -128,7 +128,7 @@ function onSubmit(e) {
             }
 
             setTimeout(() => {
-                 articleLinkInterval(articleLink);
+                articleLinkInterval(articleLink);
                 restartChildParent();
             }, 3000);
 
@@ -137,7 +137,7 @@ function onSubmit(e) {
 
     return false;
 }
- 
+
 
 function articleQueueInterval() {
     var link = aticleQueue.pop();
@@ -151,6 +151,7 @@ function articleLinkInterval(articleLink) {
     var interval = setInterval(() => {
         if (count == articleLink.length) {
             clearInterval(interval);
+            updateDictionay(articleLink);
         }
         var link = articleLink[count];
         loadArticleLink(link);
@@ -159,10 +160,21 @@ function articleLinkInterval(articleLink) {
     }, articleLinkIntervalfloat);
 }
 
+function updateDictionay(articleList) {
+ 
+    articleList.forEach(article => {
+        var metadata = metadataByName(article);
+        if (metadata && shouldShow(metadata)) {
+            processSummary(metadata,lang);
+        }
+    });
+    restartChildParent();
+}
+
 
 
 function displayNode(text, metadata) {
-  
+
     var atExistingNode = isNodeExist(metadata);
 
     addToScroll(3000, metadata.name + (atExistingNode ? " (&middot;)" : ""));
@@ -171,7 +183,7 @@ function displayNode(text, metadata) {
 
         addNode(metadata);
         addLink(metadata, root);
- 
+
     }
 
     if (metadata.previous != null) {
@@ -186,7 +198,7 @@ function displayNode(text, metadata) {
 
         addLink(metadata, metadata.previous);
     }
- 
+
 
     restartVisualisation(true);
 
@@ -194,7 +206,7 @@ function displayNode(text, metadata) {
 }
 
 async function loadArticleLink(title) {
-     
+
     if (!isNodeExistByName(title)) return;
 
     var metadata = metadataByName(title);
@@ -218,7 +230,7 @@ async function loadArticleLink(title) {
 
 function restartVisualisation(resimulate) {
     restartChildParent();
-    
+
     if (type == graphType) {
         restart(resimulate);
     } else if (type == radialClusterType) {
@@ -227,16 +239,16 @@ function restartVisualisation(resimulate) {
 }
 
 async function loadArticle(title, previousMetadata) {
-    
+
     var metadata;
     await $.getJSON(
         "https://" + lang + ".wikipedia.org/w/api.php?callback=?", {
-            titles: title,
-            action: "query",
-            prop: "revisions",
-            rvprop: "content",
-            format: "json"
-        },
+        titles: title,
+        action: "query",
+        prop: "revisions",
+        rvprop: "content",
+        format: "json"
+    },
         function (data) {
             metadata = extractField(data, previousMetadata)
         }

@@ -21,7 +21,7 @@ function displayList(element, parent) {
     if (element.show) {
         var current = parent.append("li");
         var a = current.append("a").text(element.name);
-        if(dictionary[element.name]){
+        if(dictionary[element.id]){
             var span = current.append("span").text(dictionary[element.name]);
             a.on("mouseover", span.attr("class", "active"));
             a.on("mouseout", span.attr("class", ""))
@@ -40,7 +40,7 @@ function displayList(element, parent) {
 }
 
 function restartChildParent() {
-
+     
     data = toHierarchy();
     navcontainer.select("ul").remove();
     var parent = navcontainer.append("ul").attr("class", "list");
