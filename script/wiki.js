@@ -6,11 +6,16 @@ var graph = {
 };
 var graphType = "graph";
 var radialClusterType = "radial Cluster"
-var vizType = [graphType, radialClusterType];
+var childParent = "childParent";
+var vizType = [graphType , childParent];
 var typeIndex = 0;
 var type = vizType[typeIndex];
 var aticleQueue = [];
-
+var root;
+var articleInterval = 21;
+var articleLinkIntervalfloat = 1001;
+var lang;
+var sliderController;
 var rootDictionary = {
     'en': {
         id: 13692155,
@@ -40,18 +45,20 @@ var rootDictionary = {
         id: 904,
         name: "&#1060;&#1080;&#1083;&#1086;&#1089;&#1086;&#1092;&#1080;&#1103;"
     }
-}
-var root;
-var articleInterval = 21;
-var articleLinkIntervalfloat = 1001;
-var lang;
+};
+
+var dictionary = {};
+
 $(document).ready(function () {
+    sliderController = slider('#slider');
+    sliderController.gotoSlide('#infovis');
+
     lang = "fr"
     loadRoot(rootDictionary[lang]);
 
     init();
     initGraph();
-    initHierarchy();
+    initChildParent();
     displayType();
     
     $("#submit").click(onSubmit);
@@ -84,13 +91,19 @@ function loadRoot(node) {
 
 function displayType() {
     type = vizType[typeIndex];
-
+    
     if (type == graphType) {
         d3.select("#graph").attr("class", "");
         d3.select("#radial").attr("class", "hidden");
+        d3.select("#childParent").attr("class", "");
     } else if (type == radialClusterType) {
         d3.select("#graph").attr("class", "hidden");
+        d3.select("#childParent").attr("class", "hidden");
         d3.select("#radial").attr("class", "");
+    } else if( type == childParent){
+        d3.select("#graph").attr("class", "hidden");
+        d3.select("#radial").attr("class", "hidden");
+        d3.select("#childParent").attr("class", "");
     }
 }
 
@@ -116,7 +129,7 @@ function onSubmit(e) {
 
             setTimeout(() => {
                  articleLinkInterval(articleLink);
-
+                restartChildParent();
             }, 3000);
 
         });
@@ -204,6 +217,8 @@ async function loadArticleLink(title) {
 }
 
 function restartVisualisation(resimulate) {
+    restartChildParent();
+    
     if (type == graphType) {
         restart(resimulate);
     } else if (type == radialClusterType) {

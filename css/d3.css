@@ -3,8 +3,7 @@
 }
 
 svg {
-    margin-top: 100px;
-    color: #000;
+     color: #000;
 }
 
 #graph .links {
@@ -18,10 +17,9 @@ svg {
     stroke-width: 1.5;
 }
 
-#graph line.highlight{
+#graph line.highlight {
     stroke: rgb(71, 51, 253);
     stroke-width: 5px;
-
 }
 
 #graph .nodes circle {
@@ -31,11 +29,10 @@ svg {
 
 #graph .nodes circle.highlight {
     stroke: rgb(71, 51, 253);
-
     r: 5;
 }
 
-#graph .nodes text.highlight{
+#graph .nodes text.highlight {
     font-size: 18px;
 }
 
@@ -78,3 +75,5 @@ svg {
     stroke-opacity: 0.4;
     stroke-width: 1.5px;
 }
+
+ 

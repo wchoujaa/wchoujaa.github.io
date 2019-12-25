@@ -19,7 +19,6 @@ var strokeColor = "rgba(0, 0, 0, 0.82)"
 var hoverselectedpadding = 22;
 var selected;
 var zoom;
-var slider;
 var svg;
 var dezoomed;
 var linkIteration = 0.1; // between 0 and 1
@@ -231,7 +230,7 @@ function restart(resimulate) {
     simulation.nodes(graph.nodes);
     simulation.force("link").links(graph.links);
 
-    if(resimulate == true){
+    if (resimulate == true) {
         simulation.alpha(alphaTarget);
         simulation.restart();
     }
@@ -504,9 +503,9 @@ function recurseDelete(metadata) {
     graph.links.forEach(link => {
         if (metadata.id == link.source.id) {
             var metadataChild = d3.select('#name' + link.target.id).data()[0];
- 
+
             recurseDelete(metadataChild);
-                
+
         }
     });
 
@@ -523,6 +522,75 @@ function removeNode(metadata) {
 
 function removeLink(source, destination) {
     graph.links = graph.links.filter(link => !(link.source.id == source.id && link.target.id == destination.id));
+}
+
+
+function recurse(current, mlinks) {
+
+    if (mlinks) {
+        var found = false;
+        current.children.forEach(child => {
+            var result = mlinks.filter(link => link.id != child.id);
+            if (result.length > 0) {
+                found = true;
+            }
+        });
+
+        if (!found) {
+            return;
+        }
+    }
+
+
+    graph.links.forEach(link => {
+        if (current.id == link.source.id) {
+            var child = { id: link.target.id, name: link.target.name, children: [] };
+            current.children.push(child);
+        }
+    });
+
+    if (current.children.length > 0) {
+        current.children.forEach(child => {
+            recurse(child);
+        });
+    }
+    
+    // should be displayed ? 
+    // criteria:
+    // adjacency > 2
+    // mlinks > 2
+    // or leaf
+    var result = graph.mLinks.filter(link => link.id == current.id);
+    console.log(current , root);
+    
+    if(current.id == root.id){
+        current.show = true;
+
+    }
+    else if (current.children.length == 0) {
+        current.show = true;
+    }
+    else if (adjacency(current) >= 2) {
+        current.show = true;
+    }
+    
+    else if (result.length > 2) {
+        current.show = true;
+    } else {
+        current.show = false
+    }
+
+
+}
+
+function toHierarchy(mlinks) {
+
+    var hierarchyRoot = { id: root.id, name: root.name, children: [] }
+
+    recurse(hierarchyRoot, mlinks);
+    //console.log(hierarchyRoot);
+    //return tree(d3.hierarchy(hierarchyRoot).sort((a, b) => d3.ascending(a.data.name, b.data.name)));
+    return hierarchyRoot;
 }
 
 function metadataByName(pageName) {

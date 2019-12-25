@@ -18,15 +18,14 @@ function initHierarchy() {
             return (a.parent == b.parent ? 1 : 2) / a.depth;
         });
 
-
     restartRadial(graph);
 }
 
 var test2;
 function restartRadial() {
 
-    var root = toHierarchy(graph);
-
+    var rootData = toHierarchy();
+    var root = tree(d3.hierarchy(rootData).sort((a, b) => d3.ascending(a.data.name, b.data.name)));
     if (!root) return;
 
     test2 = root;
@@ -72,32 +71,3 @@ function project(x, y) {
     return [radius * Math.cos(angle), radius * Math.sin(angle)];
 }
 
-var test;
-
-function recurse(current) {
-
-    graph.links.forEach(link => {
-        if (current.id == link.source.id) {
-            var child = { id: link.target.id, name: link.target.name, children: [] };
-            current.children.push(child);
-        }
-    });
-
-    if (current.children.length > 0) {
-        current.children.forEach(child => {
-            recurse(child);
-        });
-    }
-
-}
-var test;
-
-function toHierarchy(graph) {
-
-    var hierarchyRoot = { id: root.id, name: root.name, children: [] }
-
-    recurse(hierarchyRoot);
-    //console.log(hierarchyRoot);
-    test = hierarchyRoot;
-    return tree(d3.hierarchy(hierarchyRoot).sort((a, b) => d3.ascending(a.data.name, b.data.name)));
-}

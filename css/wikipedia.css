@@ -13,6 +13,48 @@ html {
     height: 100%;
 }
 
+#header {
+    background-color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 99;
+}
+
+#slider-navbar {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#slider-navbar li {
+ 	float: left;
+	margin: 10px;
+	color: #000;
+	background:#fff;
+	background: rgba(224, 224, 224, 0.5);
+	-webkit-border-radius: 10px;
+    border-radius: 10px;
+}
+#slider-navbar li:hover {
+ 
+   background: rgba(209, 209, 209, 0.5);
+ 
+}
+
+
+#slider-navbar li a {
+    display: block;
+    color: gray;
+    text-align: center;
+    padding: 16px;
+    text-decoration: none;
+}
+
+ 
+
 #masthead {
     border-top: 3px solid #2e333d;
     padding-top: .5em;
@@ -45,14 +87,16 @@ html {
     display: flex;
 }
 
+#listvis{
+ }
+
 #infovis {
     flex: 1;
 }
 
 .slider {
     position: absolute;
-    top: 120px;
-}
+ }
 
 .zoom-slider {
     left: 120px;
