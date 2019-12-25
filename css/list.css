@@ -15,8 +15,7 @@ h1 {
     min-height: auto;
     background: white;
     white-space: nowrap;
-    overflow: hidden;
-}
+ }
 
 ul.list, ul.list ul {
     margin: 0;

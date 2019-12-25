@@ -7,6 +7,7 @@ body {
     text-align: center;
     height: 100%;
     border-top: 3px solid #18416A;
+    overflow: hidden;
 }
 
 html {
@@ -83,13 +84,12 @@ html {
     bottom: 0;
     left: 0;
     right: 0;
-    overflow: hidden;
-    display: flex;
+     display: flex;
 }
 
 #listvis{
-    overflow: hidden;
- }
+
+}
 
 #infovis {
     flex: 1;
