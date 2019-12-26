@@ -86,6 +86,8 @@ $(document).ready(function () {
     });
 
     $('#image').click(function () {
+        restartVisualisation();
+
         if (searching) return;
         // on image click load metalink
         articleLinkInterval(articleLink);
