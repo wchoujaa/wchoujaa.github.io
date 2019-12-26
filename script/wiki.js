@@ -13,7 +13,7 @@ var type = vizType[typeIndex];
 var aticleQueue = [];
 var root;
 var articleInterval = 21;
-var articleLinkIntervalfloat = 101;
+var articleLinkIntervalfloat = 7;
 var lang;
 var sliderController;
 var rootDictionary = {
@@ -46,9 +46,10 @@ var rootDictionary = {
         name: "&#1060;&#1080;&#1083;&#1086;&#1089;&#1086;&#1092;&#1080;&#1103;"
     }
 };
-var searching =false;
+var searching = false;
 // contain definition of articles
 var dictionary = {};
+var dictionaryLink = {};
 // contain all article ?
 var articleLink = [];
 
@@ -85,11 +86,10 @@ $(document).ready(function () {
     });
 
     $('#image').click(function () {
-        if(searching) return;
+        if (searching) return;
         // on image click load metalink
         articleLinkInterval(articleLink);
         restartChildParent();
-
     });
 
     setInterval(articleQueueInterval, articleInterval);
@@ -123,18 +123,10 @@ function onSubmit(e) {
 
     var names = $('#articleName').val().split(',');
     if (names == "") return false;
+
     for (i = 0; i < names.length; i++) {
         var pageName = names[i];
         aticleQueue.unshift(pageName);
-
-        process(pageName, lang, maxLink).then(function (links) {
-
-            for (var j = 0; j < links.length; j++) {
-                var linkName = links[j].page;
-
-                aticleQueue.unshift(linkName);
-            }
-        });
     }
 
     return false;
@@ -144,7 +136,16 @@ function onSubmit(e) {
 function articleQueueInterval() {
     var link = aticleQueue.pop();
     if (link) {
-        loadArticle(link);
+        loadArticle(link).then(function (metadata) {
+            if (metadata) {
+                process(metadata, lang, maxLink).then(function (links) {
+                    for (var j = 0; j < links.length; j++) {
+                        var linkName = links[j].page;
+                        loadArticle(linkName);
+                    }
+                });
+            }
+        })
     }
 }
 
@@ -154,12 +155,12 @@ function articleLinkInterval(articles) {
     var interval = setInterval(() => {
         if (count == articles.length) {
             clearInterval(interval);
+            searching = false;
+        } else {
+            var article = articles[count];
+            loadArticleLink(article);
+            restartChildParent();
         }
-
-        var article = articles[count];
-        loadArticleLink(article);
-        restartChildParent();
-
         count++;
     }, articleLinkIntervalfloat);
 }
@@ -210,15 +211,13 @@ function displayNode(text, metadata) {
 }
 
 async function loadArticleLink(metadata) {
+    if (!metadata) return;
 
-    if (!isNodeExist(metadata)) return;
+    if (!isNodeExist(metadata)) return; // if deleted during async call
 
-
-
-    process(metadata.name, lang, 5).then(function (val) {
-        if (!metadata) return; // if deleted during async call
+    process(metadata, lang).then(function (val) {
+        if (!isNodeExist(metadata)) return; // if deleted during async call
         var nameList = val;
-
 
         for (var j = 0; j < nameList.length; j++) {
             var linkName = nameList[j].page;
@@ -256,14 +255,14 @@ async function loadArticle(title, previousMetadata) {
             metadata = extractField(data, previousMetadata)
         }
     );
-    return metadata[0];
+    return metadata;
 }
 
 function extractField(data, previousMetadata) {
 
     if (!data.query) return null;
     var page = data.query.pages;
-    var entries = [];
+    var metadata;
     for (i in page) {
         var title = page[i].title;
         var pageid = page[i].pageid;
@@ -272,17 +271,16 @@ function extractField(data, previousMetadata) {
             break;
         }
         var text = page[i].revisions[0]["*"];
-        var metadata = {
+        metadata = {
             id: pageid,
             name: title,
             previous: previousMetadata
         };
-        entries.push(metadata);
         entry(text, metadata);
         break;
     }
 
-    return entries;
+    return metadata;
 }
 
 function addToScroll(fade, name) {

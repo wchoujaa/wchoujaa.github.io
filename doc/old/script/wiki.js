@@ -15,20 +15,24 @@ $(document).ready(function () {
 
    var parser = function () {
       console.log(maxLink);
-      
+
       var names = $('#articleName').val().split(',');
-      
+
       for (i = 0; i < names.length; i++) {
          console.log(names[i].page);
-         
-         loadArticle(names[i]);
 
-         process(names[i], maxLink).then(function(val) {
-           var nameList = val;
-           for (var j = 0; j < nameList.length; j++) {
-             loadArticle(nameList[j].page);
-           }
+         loadArticle(names[i]).then(function (metadata) {
+            console.log(metadata);
+            
+            process(metadata, maxLink).then(function (val) {
+               var nameList = val;
+               for (var j = 0; j < nameList.length; j++) {
+                  loadArticle(nameList[j].page);
+               }
+            });
          });
+
+
       }
       return false;
    };
@@ -75,7 +79,7 @@ $(document).ready(function () {
 
    $('#branch').change(function () {
       maxLink = $('#branch').val();
-      if(maxLink == "max"){
+      if (maxLink == "max") {
          maxLink = -1;
       }
    });
@@ -90,7 +94,7 @@ $(document).ready(function () {
    });
 
    rgraphic.loadJSON(root[lang]);
-   
+
    $(window).resize();
 
    // excanvas work-around...
@@ -144,7 +148,7 @@ function plotter(position) {
    return position.theta = (Math.PI * 2) * ((100 - rotate) / (100)) - (position.theta * ((100 - spread) / 100)) + (Math.PI) * ((100 - spread) / 100) - (Math.PI / 2);
 }
 
-function loadArticle(title, previousMetadata) {
+async function loadArticle(title, previousMetadata) {
    $.getJSON(
       "https://" + lang + ".wikipedia.org/w/api.php?callback=?", {
          titles: title,
@@ -154,14 +158,15 @@ function loadArticle(title, previousMetadata) {
          format: "json"
       },
       function (data) {
-         extractField(data, previousMetadata)
+         return extractField(data, previousMetadata);
       }
    );
 }
 
 function extractField(data, previousMetadata) {
-   if(!data.query) return;
+   if (!data.query) return null;
    var page = data.query.pages;
+   var metadata;
    for (i in page) {
       var title = page[i].title;
       var pageid = page[i].pageid;
@@ -170,13 +175,16 @@ function extractField(data, previousMetadata) {
          break;
       }
       var text = page[i].revisions[0]["*"];
-      entry(text, {
+      metadata = {
          id: pageid,
          name: title,
          previous: previousMetadata
-      });
+      };
+
+      entry(text, metadata);
       break;
    }
+   return metadata;
 }
 
 function loadRandomArticle() {

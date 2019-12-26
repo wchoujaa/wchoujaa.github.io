@@ -36,7 +36,7 @@ var dragYStart = 0;
 var gScaleX = 0;
 var gScaleY = 0;
 var alphaDecay = 0.009;
-var alphaTarget = 1.5;
+var alphaTarget = 2.5;
 var alphaMin = 0.11;
 var r = 5.5;
 var collideStrength = 0.3;
@@ -62,7 +62,7 @@ var inputAngle;
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -124,10 +124,8 @@ function initGraph() {
     simulation = d3.forceSimulation(graph.nodes)
         .force("charge", d3.forceManyBody().distanceMax(distanceMax))
         .force("link", d3.forceLink().iterations(linkIteration))
-        .force('x', d3.forceX().strength(gravityX))
-        .force('y', d3.forceY().strength(gravityY))
+        .force("center", d3.forceCenter())
         .alphaDecay(alphaDecay)
-
         .on("tick", ticked);
     /*     simulation = d3.forceSimulation(graph.nodes)
             .force("charge", d3.forceManyBody().strength((d) => (isLeaf(d) ? maxRepulsion : repulsion)).distanceMin(distanceMin).distanceMax(distanceMax))
@@ -152,16 +150,21 @@ function initGraph() {
 }
 
 
-var menu = [
-    {
-        title: 'Remove Node',
-        action: function (elm, d, i) {
-            recurseDelete(d);
-
-            restart();
-        }
+var menu = [{
+    title: 'get links',
+    action: function (elm, d, i) {
+        customHierarchy(d);
     }
-];
+}, {
+    title: '---------------'
+}, {
+    title: 'Remove Node',
+    action: function (elm, d, i) {
+        recurseDelete(d);
+
+        restart();
+    }
+}];
 
 function restart(resimulate) {
 
@@ -270,8 +273,7 @@ function zoomGraph() {
             var className = "";
             if (scale <= zoomTrshld2x) {
                 className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "hide";
-            }
-            else if (scale <= zoomTrshld) {
+            } else if (scale <= zoomTrshld) {
                 className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "hide";
             } else {
                 className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "";
@@ -356,8 +358,6 @@ function dragstarted(d) {
 }
 
 function dragged(d) {
-    simulation.alpha(1);
-    simulation.restart();
 
     if (d3.select(this).node().nodeName == "svg") {
         var x = startX - (dragXStart - d3.event.x) / scale;
@@ -365,6 +365,9 @@ function dragged(d) {
         gTranslate.attr("transform", "translate(" + x + "," + y + ") ")
 
     } else {
+        simulation.alpha(1);
+        simulation.restart();
+
         d3.select(this).attr("x", d.x = d3.event.x).attr("y", d.y = d3.event.y);
     }
 }
@@ -385,6 +388,8 @@ function clicked() {
     // open link
     //higlightNeighbours(metadata);
     d3.event.stopPropagation();
+    var link = 'http://' + lang + '.wikipedia.org/wiki/' + metadata.name;
+    window.open(link, '_blank');
 
 }
 
@@ -426,22 +431,7 @@ function deselectNeighbours() {
     zoomGraph();
 }
 
-function getLinks(metadata) {
-    var mlinks = [];
 
-    for (let i = 0; i < metadata.links.length; i++) {
-        const metadataLink = metadata.links[i];
-        var atExistingNode = isNodeExist(metadataLink);
-        if (atExistingNode) {
-
-            mlinks.push({
-                "source": metadata,
-                "target": metadataLink
-            })
-        }
-    }
-    return mlinks;
-}
 
 function adjacency(metadata) {
     var count = 0;
@@ -530,30 +520,49 @@ function getChildren(metadata) {
 }
 
 function getMetaLink(metadata) {
-    return graph.mLinks.filter(link => link.id == metadata.id);
+    return graph.mLinks.filter(link => link.source.id == metadata.id);
+}
+
+function recurseSearch(metadata, searchId) {
+    var found = false;
+    var children = getChildren(metadata);
+    // search in children
+    for (let i = 0; i < children.length && !found; i++) {
+        const child = children[i].target;
+        if (child.id == searchId) {
+            found = true;
+        }
+    }
+
+    if (!found) {
+        // for each children recurseSearch
+        for (let i = 0; i < children.length && !found; i++) {
+            const child = children[i].target;
+            found = recurseSearch(child, searchId);
+        }
+    }
+    return found;
 }
 
 
 function recurse(current, mlinks) {
-
-    if (mlinks) {
-        var found = false;
-        current.children.forEach(child => {
-            var result = mlinks.filter(link => link.id != child.id);
-            if (result.length > 0) {
-                found = true;
-            }
-        });
-
-        if (!found) {
-            return;
-        }
-    }
-
-
     graph.links.forEach(link => {
-        if (current.id == link.source.id) {
-            var child = { id: link.target.id, name: link.target.name, children: [] };
+        var continueRecurse = false;
+        if (!mlinks) {
+            continueRecurse = true;
+        } else {
+            for (let i = 0; i < mlinks.length && !continueRecurse; i++) {
+                const mlink = mlinks[i];
+                continueRecurse = recurseSearch(metadataByID(current.id), mlink.target.id);
+            }
+        }
+
+        if (continueRecurse && current.id == link.source.id) {
+            var child = {
+                id: link.target.id,
+                name: link.target.name,
+                children: []
+            };
             current.children.push(child);
         }
     });
@@ -578,12 +587,16 @@ function recurse(current, mlinks) {
 }
 
 function shouldShow(metadata) {
-    return getChildren(metadata) == 0 || adjacency(metadata) >= 2 || getMetaLink(metadata) >= 2 || metadata.id == root.id;
+    return getChildren(metadata) == 0 || adjacency(metadata) >= 3 || getMetaLink(metadata) >= 5 || metadata.id == root.id;
 }
 
 function toHierarchy(mlinks) {
 
-    var hierarchyRoot = { id: root.id, name: root.name, children: [] }
+    var hierarchyRoot = {
+        id: root.id,
+        name: root.name,
+        children: []
+    }
 
     recurse(hierarchyRoot, mlinks);
     //console.log(hierarchyRoot);
@@ -620,9 +633,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-        id: "a",
-        name: "a"
-    },
+            id: "a",
+            name: "a"
+        },
         b = {
             id: "b",
             name: "b"

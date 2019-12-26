@@ -45,3 +45,16 @@ function restartChildParent() {
 
     displayList(data, parent);
 }
+
+
+function customHierarchy(metadata) {
+
+
+    data = toHierarchy(getMetaLink(metadata));
+
+    
+
+    var parent = navcontainer.append("ul").attr("class", "list");
+
+    displayList(data, parent);
+}
