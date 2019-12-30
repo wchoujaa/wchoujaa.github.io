@@ -18,14 +18,18 @@ async function process(metadata, langage, percent) {
         dictionary[metadata.id] = doc.section(0).data.paragraphs[0].sentences()[0].data.text;
 
     });
+  } else {
+    ls = dictionaryLink[metadata.id];
   }
 
 
 
 
+  
+  if (percent && ls.length > 0){
+    ls = ls.slice(0,  ls.length * (percent/100) );
 
-  if (percent && ls.length > 0)
-    ls = ls.slice(0, percent / ls.length * 100);
-
+  }
+ 
   return ls;
 }

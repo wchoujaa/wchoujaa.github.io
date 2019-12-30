@@ -141,6 +141,8 @@ function articleQueueInterval() {
         loadArticle(link).then(function (metadata) {
             if (metadata) {
                 process(metadata, lang, maxLink).then(function (links) {
+                    console.log(links);
+                    
                     for (var j = 0; j < links.length; j++) {
                         var linkName = links[j].page;
                         loadArticle(linkName);
@@ -247,8 +249,7 @@ async function loadArticle(title, previousMetadata) {
     var metadata = metadataByName(title);
 
     if (!metadata) {
-        console.log(metadata);
-        
+         
         await $.getJSON(
             "https://" + lang + ".wikipedia.org/w/api.php?callback=?", {
             titles: title,
@@ -261,7 +262,7 @@ async function loadArticle(title, previousMetadata) {
                 metadata = extractField(data, previousMetadata)
             }
         );
-    }
+    } 
 
     return metadata;
 }

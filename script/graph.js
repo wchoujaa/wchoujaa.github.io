@@ -270,9 +270,11 @@ function zoomGraph() {
 
     node.selectAll("text")
         .style("font-size", function (d) {
-            var size = 12; 
-            if(shouldShow(d)){
-                size = size/scale;
+            var size = 12;
+            if (shouldShow(d)) {
+                size = size / scale;
+            } else if (scale > 1) {
+                size = size / scale;
             }
             return size + "px";
         });
