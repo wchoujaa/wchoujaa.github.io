@@ -14,8 +14,15 @@ html {
     height: 100%;
 }
 
+.slider-control{
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+
 #header {
-    background-color: white;
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 33%, rgba(255,255,255,1) 67%, rgba(255,255,255,0) 100%);
     position: fixed;
     top: 0;
     left: 0;
@@ -97,16 +104,13 @@ html {
 }
 
 .slider {
-    position: absolute;
-}
+ }
 
 .zoom-slider {
-    left: 120px;
-}
+ }
 
 .angle-slider {
-    left: 350px;
-}
+ }
 
 svg {
     width: 100%;

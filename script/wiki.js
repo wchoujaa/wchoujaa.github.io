@@ -244,19 +244,25 @@ function restartVisualisation(resimulate) {
 
 async function loadArticle(title, previousMetadata) {
 
-    var metadata;
-    await $.getJSON(
-        "https://" + lang + ".wikipedia.org/w/api.php?callback=?", {
+    var metadata = metadataByName(title);
+
+    if (!metadata) {
+        console.log(metadata);
+        
+        await $.getJSON(
+            "https://" + lang + ".wikipedia.org/w/api.php?callback=?", {
             titles: title,
             action: "query",
             prop: "revisions",
             rvprop: "content",
             format: "json"
         },
-        function (data) {
-            metadata = extractField(data, previousMetadata)
-        }
-    );
+            function (data) {
+                metadata = extractField(data, previousMetadata)
+            }
+        );
+    }
+
     return metadata;
 }
 

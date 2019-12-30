@@ -62,7 +62,7 @@ var inputAngle;
         typeOfCanvas = typeof HTMLCanvasElement,
         nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
         textSupport = nativeCanvasSupport &&
-        (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
+            (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
 
     labelType = (!nativeCanvasSupport || (textSupport && !iStuff)) ? 'Native' : 'HTML';
     nativeTextSupport = labelType == 'Native';
@@ -269,17 +269,12 @@ function zoomGraph() {
         .text((Math.round(scale * 100) / 100).toFixed(2));
 
     node.selectAll("text")
-        .attr("class", function (d) {
-            var className = "";
-            if (scale <= zoomTrshld2x) {
-                className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom2x" : "hide";
-            } else if (scale <= zoomTrshld) {
-                className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "hide";
-            } else {
-                className = (adjacency(d) == 0 || adjacency(d) >= 2 || d.id == root.id) ? "dezoom" : "";
+        .style("font-size", function (d) {
+            var size = 12; 
+            if(shouldShow(d)){
+                size = size/scale;
             }
-
-            return className;
+            return size + "px";
         });
 
 }
@@ -633,9 +628,9 @@ function mouseTest() {
 
 function test() {
     var a = {
-            id: "a",
-            name: "a"
-        },
+        id: "a",
+        name: "a"
+    },
         b = {
             id: "b",
             name: "b"
