@@ -54,7 +54,7 @@ var dictionaryLink = {};
 var articleLink = [];
 
 $(document).ready(function () {
-    new Glide('.glide').mount()
+    //new Glide('.glide').mount()
 
 
     lang = "fr";
@@ -235,7 +235,7 @@ async function loadArticleLink(metadata) {
 }
 
 function restartVisualisation(resimulate) {
-    restartChildParent();
+    //restartChildParent();
 
     if (type == graphType) {
         restart(resimulate);
