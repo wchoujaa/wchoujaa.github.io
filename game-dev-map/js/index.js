@@ -62,8 +62,8 @@ function update(source) {
         .attr('class', 'node')
         .attr("transform", function (d) {
             return "translate(" + source.y0 + "," + source.x0 + ")";
-        })
-        .on('click', click);
+        });
+
 
     // Add Circle for the nodes
     nodeEnter.append('circle')
@@ -71,7 +71,7 @@ function update(source) {
         .attr('r', 1e-6)
         .style("fill", function (d) {
             return d._children ? "lightsteelblue" : "#fff";
-        });
+        }).on('click', click);
 
     // Add labels for the nodes
     nodeEnter.append('text')
