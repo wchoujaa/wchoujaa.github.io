@@ -1,5 +1,5 @@
 const data_link = "https://raw.githubusercontent.com/wchoujaa/game-dev-map/master/readme.md";
-
+                    
 var data;
 
 var tree;
@@ -15,24 +15,26 @@ d3.select(window).on("load", async function () {
 function normalDendogram(data) {
     var width = window.screen.width
     var height = window.screen.height
-    var radius = width / 5 // radius of the dendrogram
     var svg = d3.select("#dendo")
         .attr("width", width)
         .attr("height", height)
         .append("g")
-        .attr("transform", "scale(0.7) translate( "+ width/3 + "," + height/5  +  ")")
- 
-    var cluster = d3.cluster()
-        .size([100, radius]);
+        .attr("transform", "scale(0.7) translate( " + width / 3 + "," + height / 7 + ")")
 
 
-    var cluster = d3.cluster()
-        .size([height * 0.7, width * 0.7]);  // 100 is the margin I will have on the right side
-
-    // Give the data to this cluster layout:
     var root = d3.hierarchy(data, function (d) {
         return d.children;
     });
+
+    console.log(root);
+
+
+    var cluster = d3.cluster()
+        .size([height, width * 0.7]);  // 100 is the margin I will have on the right side
+
+    // Give the data to this cluster layout:
+
+
     cluster(root);
 
     // Add the links between nodes:
@@ -50,17 +52,18 @@ function normalDendogram(data) {
         .attr("stroke", '#ccc')
 
 
- 
-    .append("circle")
-      .attr("r", 7)
-      .style("fill", "#69b3a2")
-      .attr("stroke", "black")
-      .style("stroke-width", 2)
+
+        .append("circle")
+        .attr("r", 7)
+        .style("fill", "#69b3a2")
+        .attr("stroke", "black")
+        .style("stroke-width", 2)
+
     g = svg.selectAll("g")
         .data(root.descendants())
         .enter()
         .append("g")
-        .attr("transform", function(d) {
+        .attr("transform", function (d) {
             return "translate(" + d.y + "," + d.x + ")"
         })
 
@@ -74,13 +77,11 @@ function normalDendogram(data) {
         .attr("fill", "Black")
         .style("font", "normal 17px Arial")
         .attr("dy", ".35em")
-        .attr("text-anchor",   "start")
-        .attr("transform", function(d) {
+        .attr("text-anchor", "start")
+        .attr("transform", function (d) {
             return "translate(17,0)"
         })
         .text(function (d) {
-            console.log(d.data.name);
-
             return d.data.name;
         });
 
@@ -212,9 +213,9 @@ function hierarchy_from(text) {
     for (let i = 0; i < text_array_filtered.length; i++) {
         const line = text_array_filtered[i];
         lvl = (line.match(/#/g) || []).length;
+        if (lvl == 1) continue;
 
         curr = { name: line.split('#').join(''), children: [], lvl: lvl }
-
         parent = stack[stack.length - 1];
         //console.log(stack);
 
