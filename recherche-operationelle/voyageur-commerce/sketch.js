@@ -1,4 +1,3 @@
-import { join } from "../lib/p5";
 
 let img;
 var cities = [];
