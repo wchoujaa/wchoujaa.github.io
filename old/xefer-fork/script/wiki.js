@@ -144,7 +144,7 @@ function articleQueueInterval() {
                     console.log(links);
                     
                     for (var j = 0; j < links.length; j++) {
-                        var linkName = links[j].page;
+                        var linkName = links[j].page();
                         loadArticle(linkName);
                     }
                 });
@@ -157,6 +157,7 @@ function articleLinkInterval(articles) {
     searching = true;
     var count = 0;
     var interval = setInterval(() => {
+        console.log("iteration " + count);
         if (count == articles.length) {
             clearInterval(interval);
             searching = false;
@@ -216,16 +217,18 @@ function displayNode(text, metadata) {
 
 async function loadArticleLink(metadata) {
     if (!metadata) return;
-
-    if (!isNodeExist(metadata)) return; // if deleted during async call
+    var notExist = !isNodeExist(metadata)
+    if (notExist) return; // if deleted during async call
 
     process(metadata, lang).then(function (val) {
-        if (!isNodeExist(metadata)) return; // if deleted during async call
+        notExist = !isNodeExist(metadata)
+        if (notExist) return; // if deleted during async call
         var nameList = val;
 
         for (var j = 0; j < nameList.length; j++) {
-            var linkName = nameList[j].page;
-            if (isNodeExistByName(linkName)) {
+            var linkName = nameList[j].page();
+            exist = isNodeExistByName(linkName)
+            if (exist) {
                 var metadataLink = metadataByName(linkName);
                 addMlink(metadata, metadataLink);
                 restartVisualisation(false);
