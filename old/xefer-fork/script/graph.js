@@ -196,18 +196,12 @@ function restart(resimulate) {
             .on("drag", dragged)
             .on("end", dragended));
 
-    nodeEnter.append("circle") 
+    nodeEnter.append("circle")
         .attr("fill", function (d) {
             return color(d.group);
         });
 
-    /*     nodeEnter.append("text")
-            .text(function (d) {
-                return d.name;
-            })
-    
-            .attr('x', 12)
-            .attr('y', 3).attr("font-size", fontSize); */
+
 
 
 
@@ -255,6 +249,7 @@ function restart(resimulate) {
         .attr('y', 3).attr("font-size", fontSize);
 
 
+
     text = textEnter.merge(text);
 
     // Update and start the simulation.
@@ -286,8 +281,7 @@ function rotateGraph() {
     inputAngle
         .property("value", rotation);
     // rotate the graph
-    text.selectAll("text")
-        .attr("transform", "  rotate(" + -rotation + ")")
+
     // rotate the graph
     gAngle
         .attr("transform", "  rotate(" + rotation + ")");
@@ -302,11 +296,11 @@ function zoomGraph() {
     // adjust the text, get 2 decimal places, put it on the range slider
     d3.select("#zoom-value")
         .text((Math.round(scale * 100) / 100).toFixed(2));
- 
+
 
     d3.selectAll(".text-content")
-    .attr("font-size", function(d){   
-              var size = 24;
+        .attr("font-size", function (d) {
+            var size = 24;
             if (shouldShow(d)) {
                 size = size / scale;
             } else if (scale > 1) {
@@ -316,7 +310,7 @@ function zoomGraph() {
             }
 
             return size + "px";
-        });    
+        });
 
 }
 
@@ -366,7 +360,7 @@ function ticked() {
         });
     text
         .attr("transform", function (d) {
-            return "translate(" + d.x + "," + d.y + ")";
+            return "translate(" + d.x + "," + d.y + ") rotate(" + -rotation + ")";
         });
 
     node
@@ -628,6 +622,10 @@ function recurse(current, mlinks) {
     } else {
         current.show = false
     }
+}
+
+function shouldReallyShow(metadata) {
+    return adjacency(metadata) >= 10 || getMetaLink(metadata) >= 10 || metadata.id == root.id;
 }
 
 function shouldShow(metadata) {
