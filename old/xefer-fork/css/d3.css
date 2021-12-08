@@ -23,13 +23,11 @@ svg {
 }
 
 #graph .nodes circle {
-    stroke: #fff;
-    r: 3;
+    stroke: #fff; 
 }
 
 #graph .nodes circle.highlight {
-    stroke: rgb(71, 51, 253);
-    r: 5;
+    stroke: rgb(71, 51, 253); 
 }
 
 #graph .nodes text.highlight {

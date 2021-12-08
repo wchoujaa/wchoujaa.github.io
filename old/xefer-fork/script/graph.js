@@ -5,6 +5,7 @@ var labelType, useGradients, nativeTextSupport, animate, rgraphic;
 var link;
 var node;
 var mLink;
+var text;
 var color;
 var simulation;
 var width = screen.width;
@@ -35,7 +36,7 @@ var dragXStart = 0;
 var dragYStart = 0;
 var gScaleX = 0;
 var gScaleY = 0;
-var alphaDecay = 0.009;
+var alphaDecay = 0.019;
 var alphaTarget = 1.7;
 var alphaMin = 0.11;
 var r = 5.5;
@@ -124,6 +125,7 @@ function initGraph() {
     simulation = d3.forceSimulation(graph.nodes)
         .force("charge", d3.forceManyBody().distanceMax(distanceMax))
         .force("link", d3.forceLink().iterations(linkIteration))
+        .force("collide", d3.forceCollide().radius(d => getRadius(d)).iterations(3))
         .force("center", d3.forceCenter())
         .alphaDecay(alphaDecay)
         .on("tick", ticked);
@@ -142,7 +144,7 @@ function initGraph() {
     mLink = gGraph.append("g").attr("class", "mlinks").selectAll(".mlink");
     link = gGraph.append("g").attr("class", "links").selectAll(".link");
     node = gGraph.append("g").attr("class", "nodes").selectAll(".node");
-
+    text = gGraph.append("g").attr("class", "text-node").selectAll(".text-node");
 
 
     restart(true);
@@ -169,6 +171,7 @@ var menu = [{
 function restart(resimulate) {
 
 
+    // Apply the general update pattern to the links.
 
     node = node.data(graph.nodes, function (d) {
         return d.id;
@@ -193,19 +196,20 @@ function restart(resimulate) {
             .on("drag", dragged)
             .on("end", dragended));
 
-    nodeEnter.append("text")
-        .text(function (d) {
-            return d.name;
-        })
-
-        .attr('x', 12)
-        .attr('y', 3).attr("font-size", fontSize);
-
-    nodeEnter.append("circle")
-        .attr("r", 5)
+    nodeEnter.append("circle") 
         .attr("fill", function (d) {
             return color(d.group);
-        })
+        });
+
+    /*     nodeEnter.append("text")
+            .text(function (d) {
+                return d.name;
+            })
+    
+            .attr('x', 12)
+            .attr('y', 3).attr("font-size", fontSize); */
+
+
 
     node = nodeEnter.merge(node);
 
@@ -229,6 +233,30 @@ function restart(resimulate) {
 
     mLink = mLink.enter().append("line").merge(mLink);
 
+    // Apply the general update pattern to the text-node.
+
+
+
+    text = text.data(graph.nodes, function (d) {
+        return d.id;
+    });
+
+    text.exit().each(function () {
+        d3.select(this).remove();
+    });
+
+    var textEnter = text.enter()
+        .append("text")
+        .attr("class", "text-content")
+        .text(function (d) {
+            return d.name;
+        })
+        .attr('x', 12)
+        .attr('y', 3).attr("font-size", fontSize);
+
+
+    text = textEnter.merge(text);
+
     // Update and start the simulation.
     simulation.nodes(graph.nodes);
     simulation.force("link").links(graph.links);
@@ -243,6 +271,13 @@ function restart(resimulate) {
     rotateGraph();
 }
 
+
+function getRadius(metadata) {
+
+    var count = Math.pow(getMetaLink(metadata), 2) + 5;
+    return count;
+}
+
 function rotateGraph() {
 
     // adjust the text on the range slider
@@ -251,7 +286,7 @@ function rotateGraph() {
     inputAngle
         .property("value", rotation);
     // rotate the graph
-    node.selectAll("text")
+    text.selectAll("text")
         .attr("transform", "  rotate(" + -rotation + ")")
     // rotate the graph
     gAngle
@@ -267,17 +302,21 @@ function zoomGraph() {
     // adjust the text, get 2 decimal places, put it on the range slider
     d3.select("#zoom-value")
         .text((Math.round(scale * 100) / 100).toFixed(2));
+ 
 
-    node.selectAll("text")
-        .style("font-size", function (d) {
-            var size = 12;
+    d3.selectAll(".text-content")
+    .attr("font-size", function(d){   
+              var size = 24;
             if (shouldShow(d)) {
                 size = size / scale;
             } else if (scale > 1) {
                 size = size / scale;
+            } else {
+                size = 0;
             }
+
             return size + "px";
-        });
+        });    
 
 }
 
@@ -325,6 +364,14 @@ function ticked() {
         .attr("transform", function (d) {
             return "translate(" + d.x + "," + d.y + ")";
         });
+    text
+        .attr("transform", function (d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        });
+
+    node
+        .selectAll("circle")
+        .attr("r", data => getRadius(data));
 
     link
         .attr("x1", function (d) {
@@ -413,7 +460,7 @@ function higlightNeighbours(metadata) {
     mLink
         .attr("class", (d) => (mLinks.filter(link => d.source.id == link.source.id).length > 0) ? "highlight" : "");
 
-    node.selectAll("text")
+    text.selectAll("text")
         .attr("class", (d) => {
             return (mLinks.filter(link => link.target.id == d.id || d.id == link.source.id).length > 0) ? "highlight" : "";
         });
@@ -423,7 +470,7 @@ function higlightNeighbours(metadata) {
 
 function deselectNeighbours() {
     node.selectAll("circle").attr("class", "");
-    node.selectAll("text").attr("class", "")
+    text.selectAll("text").attr("class", "")
     mLink.attr("class", "");
     zoomGraph();
 }
@@ -517,7 +564,7 @@ function getChildren(metadata) {
 }
 
 function getMetaLink(metadata) {
-    return graph.mLinks.filter(link => link.source.id == metadata.id);
+    return graph.mLinks.filter(link => link.source.id == metadata.id).length;
 }
 
 function recurseSearch(metadata, searchId) {
@@ -584,7 +631,7 @@ function recurse(current, mlinks) {
 }
 
 function shouldShow(metadata) {
-    return getChildren(metadata) == 0 || adjacency(metadata) >= 3 || getMetaLink(metadata) >= 5 || metadata.id == root.id;
+    return getChildren(metadata) == 0 || adjacency(metadata) >= 5 || getMetaLink(metadata) >= 5 || metadata.id == root.id;
 }
 
 function toHierarchy(mlinks) {

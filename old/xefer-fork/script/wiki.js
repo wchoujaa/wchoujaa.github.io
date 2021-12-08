@@ -141,8 +141,7 @@ function articleQueueInterval() {
         loadArticle(link).then(function (metadata) {
             if (metadata) {
                 process(metadata, lang, maxLink).then(function (links) {
-                    console.log(links);
-                    
+                     
                     for (var j = 0; j < links.length; j++) {
                         var linkName = links[j].page();
                         loadArticle(linkName);
@@ -156,8 +155,7 @@ function articleQueueInterval() {
 function articleLinkInterval(articles) {
     searching = true;
     var count = 0;
-    var interval = setInterval(() => {
-        console.log("iteration " + count);
+    var interval = setInterval(() => { 
         if (count == articles.length) {
             clearInterval(interval);
             searching = false;
