@@ -159,6 +159,8 @@ function articleLinkInterval(articles) {
         if (count == articles.length) {
             clearInterval(interval);
             searching = false;
+            restartVisualisation(true);
+
         } else {
             var article = articles[count];
             loadArticleLink(article);
@@ -233,7 +235,6 @@ async function loadArticleLink(metadata) {
         }
     });
 
-    restartVisualisation(false);
 
 }
 

@@ -22,22 +22,24 @@ var selected;
 var zoom;
 var svg;
 var dezoomed;
-var linkIteration = 0.1; // between 0 and 1
-var linkStrength = 0.73;
-var linkDistance = 21;
+var linkIteration = 0.5; // between 0 and 1
+var linkStrength = 0.01;
+var linkDistance = 100;
 var velocityDecay = 0.51;
 var repulsion = -37;
 var maxRepulsion = -1.1;
 var gravityX = 0.003;
 var gravityY = 0.01;
 var distanceMin = 0.5;
-var distanceMax = 1000;
+var distanceMax = 10000;
+var distanceStrength = -100000; //default is -30
+
 var dragXStart = 0;
 var dragYStart = 0;
 var gScaleX = 0;
 var gScaleY = 0;
-var alphaDecay = 0.019;
-var alphaTarget = 1.7;
+var alphaDecay = 0.009;
+var alphaTarget = 1.5;
 var alphaMin = 0.11;
 var r = 5.5;
 var collideStrength = 0.3;
@@ -48,7 +50,7 @@ var fontSize = "";
 var fontSizeZoomed = "42px";
 var zoomTrshld = 3.5;
 var zoomTrshld2x = 0.6;
-
+var scaleExtent = [0.01, 10];
 var rotation = 0;
 var scale = 1;
 
@@ -96,7 +98,7 @@ function init() {
             [0, 0],
             [width, height]
         ])
-        .scaleExtent([0.1, 10])
+        .scaleExtent(scaleExtent)
         .on("zoom", zoomed));
 
     zoom = d3.zoom()
@@ -123,10 +125,10 @@ function init() {
 
 function initGraph() {
     simulation = d3.forceSimulation(graph.nodes)
-        .force("charge", d3.forceManyBody().distanceMax(distanceMax))
-        .force("link", d3.forceLink().iterations(linkIteration))
+        .force("charge", d3.forceManyBody().distanceMax(distanceMax).strength(distanceStrength))
+        .force("link", d3.forceLink())
         .force("collide", d3.forceCollide().radius(d => getRadius(d)).iterations(3))
-        .force("center", d3.forceCenter())
+        .force("center", d3.forceCenter() ) 
         .alphaDecay(alphaDecay)
         .on("tick", ticked);
     /*     simulation = d3.forceSimulation(graph.nodes)
@@ -269,7 +271,7 @@ function restart(resimulate) {
 
 function getRadius(metadata) {
 
-    var count = Math.pow(getMetaLink(metadata), 2) + 5;
+    var count = Math.pow(getMetaLink(metadata), 3)   + 5;
     return count;
 }
 
