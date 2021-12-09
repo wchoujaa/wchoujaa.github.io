@@ -229,10 +229,12 @@ async function loadArticleLink(metadata) {
             if (exist) {
                 var metadataLink = metadataByName(linkName);
                 addMlink(metadata, metadataLink);
-                restartVisualisation(false);
             }
         }
     });
+
+    restartVisualisation(false);
+
 }
 
 function restartVisualisation(resimulate) {
